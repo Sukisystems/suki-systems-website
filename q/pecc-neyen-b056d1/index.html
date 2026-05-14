@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<!--
+  ══════════════════════════════════════════════════════════════════
+  STRIPE PAYMENT LINK · WIRED
+  ──────────────────────────────────────────────────────────────────
+  Deposit ($2,062.50 USD): https://buy.stripe.com/6oUbJ20p39aB9P91Rkd3i03
+  Balance ($2,062.50 USD): invoice from Stripe dashboard on final delivery
+          (Invoices → + New invoice → Lorena's email → $2,062.50)
+  Stripe emails you on payment. No webhook / backend needed.
+  ══════════════════════════════════════════════════════════════════
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+<meta name="googlebot" content="noindex, nofollow" />
+<meta name="referrer" content="no-referrer" />
+<title>Suki Systems — PECC Simulations × 15 · Quote for Neyen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700;900&family=Caveat:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink:        #1A2332;
+    --ink-soft:   #243044;
+    --paper:      #F5F2EC;
+    --paper-soft: #EBE7DD;
+    --steel:      #5A6478;
+    --signal:     #E85A2C;
+    --line:       rgba(26, 35, 50, 0.12);
+    --line-soft:  rgba(26, 35, 50, 0.06);
+    --line-paper: rgba(245, 242, 236, 0.10);
+    --ease:       cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Archivo', system-ui, -apple-system, sans-serif;
+    font-feature-settings: "ss01", "cv11";
+    background-color: var(--paper);
+    background-image:
+      linear-gradient(to right, var(--line-soft) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--line-soft) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-position: -1px -1px;
+    color: var(--ink);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  ul { list-style: none; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .wm-text {
+    font-family: 'Archivo Black', sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    display: inline-block;
+    transform: scaleX(0.88);
+    transform-origin: left center;
+    white-space: nowrap;
+  }
+
+  /* ── Buttons ────────────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.5em;
+    font-family: 'Archivo', sans-serif;
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 14px 22px;
+    border-radius: 2px;
+    border: 1px solid transparent;
+    transition: transform 0.18s var(--ease), background 0.2s, color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-ink { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .btn-ink:hover { background: var(--ink-soft); }
+  .btn-signal { background: var(--signal); color: var(--paper); border-color: var(--signal); }
+  .btn-signal:hover { background: #d04a1f; border-color: #d04a1f; }
+  .btn-outline { background: transparent; color: var(--ink); border-color: var(--ink); }
+  .btn-outline:hover { background: var(--ink); color: var(--paper); }
+  .btn-arrow::after { content: '→'; font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+  .btn-disabled { background: transparent; color: var(--steel); border-color: var(--line); cursor: not-allowed; pointer-events: none; }
+
+  .pay-row {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .pay-note {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--steel);
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .pay-note::before {
+    content: ''; width: 18px; height: 1px; background: var(--line);
+  }
+
+  /* Stripe trust badge */
+  .stripe-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--steel);
+    margin-top: 14px;
+  }
+  .stripe-badge svg { display: block; }
+
+  /* ── Topbar ─────────────────────────────────────────── */
+  .topbar {
+    position: sticky; top: 0; z-index: 300;
+    background: rgba(245, 242, 236, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar-inner {
+    max-width: 1200px; margin: 0 auto;
+    padding: 16px 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 32px;
+  }
+  .topbar-mark { display: inline-flex; align-items: center; gap: 12px; }
+  .topbar-mark .wm-text { font-size: 16px; color: var(--ink); }
+  .topbar-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--steel);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .live-dot {
+    display: inline-block; width: 7px; height: 7px;
+    border-radius: 50%; background: var(--signal);
+    box-shadow: 0 0 0 0 rgba(232, 90, 44, 0.6);
+    animation: pulse 1.6s var(--ease) infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(232, 90, 44, 0.55); }
+    70% { box-shadow: 0 0 0 8px rgba(232, 90, 44, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(232, 90, 44, 0); }
+  }
+
+  /* ── Page ────────────────────────────────────────────── */
+  .page { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+
+  /* ── Hero / Cover ────────────────────────────────────── */
+  .cover {
+    padding: 88px 40px 72px;
+    max-width: 1200px; margin: 0 auto;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+  }
+  .cover-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--steel); margin-bottom: 28px;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .cover-eyebrow .num { color: var(--signal); }
+  .cover-title {
+    font-family: 'Archivo Black', sans-serif;
+    font-weight: 900;
+    font-size: clamp(40px, 6vw, 88px);
+    line-height: 0.95; letter-spacing: -0.04em;
+    transform: scaleX(0.92); transform-origin: left;
+    margin-bottom: 24px;
+  }
+  .cover-title .accent { color: var(--signal); }
+  .cover-sub {
+    font-size: 19px; line-height: 1.5; max-width: 640px;
+    color: var(--ink-soft); margin-bottom: 48px;
+  }
+  .cover-meta {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px;
+    padding-top: 28px; border-top: 1px solid var(--line);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--steel);
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .cover-meta strong {
+    display: block; color: var(--ink); font-weight: 600;
+    font-size: 13px; margin-top: 4px; letter-spacing: 0.02em; text-transform: none;
+    font-family: 'Archivo', sans-serif;
+  }
+
+  /* ── Section frame ───────────────────────────────────── */
+  section.s {
+    padding: 88px 40px;
+    border-bottom: 1px solid var(--line);
+    max-width: 1200px; margin: 0 auto;
+  }
+  .section-label {
+    display: flex; align-items: baseline; gap: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--steel); margin-bottom: 18px;
+  }
+  .section-label .num { color: var(--signal); font-weight: 600; letter-spacing: 0; }
+  .section-title {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: clamp(32px, 4.4vw, 56px);
+    line-height: 0.95; letter-spacing: -0.03em;
+    transform: scaleX(0.92); transform-origin: left;
+    margin: 0 0 20px; max-width: 22ch;
+  }
+  .section-lede {
+    font-size: 17px; line-height: 1.55; max-width: 680px;
+    color: var(--ink-soft); margin-bottom: 48px;
+  }
+
+  /* ── Scope grid (capability tiles) ───────────────────── */
+  .scope-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 0; border-top: 1px solid var(--line); border-left: 1px solid var(--line);
+  }
+  .scope-tile {
+    position: relative;
+    padding: 28px;
+    border-bottom: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    background: var(--paper);
+    min-height: 160px;
+    display: flex; flex-direction: column; gap: 14px;
+    overflow: hidden;
+  }
+  .scope-tile::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 2px; background: var(--signal);
+  }
+  .scope-tile .tile-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.04em;
+    color: var(--steel);
+  }
+  .scope-tile .tile-num span { color: var(--signal); }
+  .scope-tile .tile-name {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 22px; line-height: 1.05; letter-spacing: -0.02em;
+    transform: scaleX(0.94); transform-origin: left;
+  }
+  .scope-tile .tile-desc {
+    font-size: 14px; line-height: 1.55; color: var(--ink-soft);
+  }
+
+  /* ── Timeline / how the loop works ───────────────────── */
+  .loop {
+    background: var(--ink);
+    background-image:
+      linear-gradient(to right, var(--line-paper) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--line-paper) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-position: -1px -1px;
+    color: var(--paper);
+    padding: 88px 40px;
+    border-bottom: 1px solid var(--ink);
+  }
+  .loop-inner { max-width: 1200px; margin: 0 auto; }
+  .loop .section-label { color: rgba(245, 242, 236, 0.5); }
+  .loop .section-label .num { color: var(--signal); }
+  .loop .section-title { color: var(--paper); }
+  .loop .section-lede { color: rgba(245, 242, 236, 0.7); }
+  .loop-grid {
+    position: relative;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+    border-left: 1px solid var(--line-paper);
+    margin-bottom: 32px;
+    padding-top: 14px;
+  }
+  /* Static track that the animated line draws across */
+  .loop-grid::before {
+    content: '';
+    position: absolute;
+    top: 14px; left: 0; right: 0;
+    height: 1px;
+    background: var(--line-paper);
+    z-index: 1;
+    pointer-events: none;
+  }
+  /* Animated fill — width drives left-to-right draw */
+  .loop-grid::after {
+    content: '';
+    position: absolute;
+    top: 13px; left: 0;
+    height: 3px;
+    width: 0;
+    background: linear-gradient(90deg, var(--signal) 0%, #F4C97C 100%);
+    box-shadow: 0 0 14px rgba(232, 90, 44, 0.55);
+    border-radius: 2px;
+    z-index: 2;
+    transition: width 2.6s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+  }
+  .loop-grid.in-view::after { width: 100%; }
+  /* Travelling pulse that runs along the line after it draws */
+  .loop-grid.in-view .loop-pulse {
+    opacity: 1;
+    animation: pulseTravel 4.2s 2.6s var(--ease) infinite;
+  }
+  .loop-pulse {
+    position: absolute;
+    top: 8px; left: 0;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--signal);
+    box-shadow: 0 0 0 4px rgba(232, 90, 44, 0.18), 0 0 20px rgba(232, 90, 44, 0.7);
+    z-index: 4;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s var(--ease);
+  }
+  @keyframes pulseTravel {
+    0%   { left: 0;       opacity: 0; }
+    8%   { opacity: 1; }
+    92%  { opacity: 1; }
+    100% { left: calc(100% - 14px); opacity: 0; }
+  }
+
+  .loop-step {
+    padding: 28px 24px 24px;
+    border-bottom: 1px solid var(--line-paper);
+    border-right: 1px solid var(--line-paper);
+    min-height: 160px;
+    display: flex; flex-direction: column; gap: 12px;
+    position: relative;
+  }
+  /* Node dot at each step — sits on the track */
+  .loop-step::before {
+    content: '';
+    position: absolute;
+    top: 7px; left: 24px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--ink);
+    border: 2px solid var(--line-paper);
+    z-index: 3;
+    transition: background 0.45s var(--ease), border-color 0.45s var(--ease), box-shadow 0.45s var(--ease), transform 0.45s var(--ease);
+    pointer-events: none;
+  }
+  .loop-step.active::before {
+    background: var(--signal);
+    border-color: var(--signal);
+    box-shadow: 0 0 0 5px rgba(232, 90, 44, 0.18), 0 0 16px rgba(232, 90, 44, 0.5);
+    transform: scale(1.15);
+  }
+  .loop-step .step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.04em;
+    color: rgba(245, 242, 236, 0.4);
+  }
+  .loop-step .step-num span { color: var(--signal); }
+  .loop-step .step-day {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--signal);
+  }
+  .loop-step .step-name {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 20px; line-height: 1.05; letter-spacing: -0.02em;
+    transform: scaleX(0.94); transform-origin: left;
+    color: var(--paper);
+  }
+  .loop-step .step-desc {
+    font-size: 13.5px; line-height: 1.55;
+    color: rgba(245, 242, 236, 0.7);
+    margin-top: auto;
+  }
+  .loop-callout {
+    background: rgba(232, 90, 44, 0.08);
+    border: 1px solid rgba(232, 90, 44, 0.3);
+    border-left: 2px solid var(--signal);
+    padding: 24px 28px;
+    color: rgba(245, 242, 236, 0.9);
+    font-size: 15px; line-height: 1.6;
+  }
+  .loop-callout strong { color: var(--paper); font-weight: 700; }
+
+  /* ── Investment ──────────────────────────────────────── */
+  .invest-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 0;
+    overflow: hidden;
+  }
+  .invest-head {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    border-bottom: 1px solid var(--line);
+  }
+  .invest-cell {
+    padding: 32px 28px;
+    border-right: 1px solid var(--line);
+  }
+  .invest-cell:last-child { border-right: none; }
+  .invest-cell .cell-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--steel); margin-bottom: 12px;
+  }
+  .invest-cell .cell-num {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 40px; line-height: 1; letter-spacing: -0.03em;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .invest-cell .cell-num.signal { color: var(--signal); }
+  .invest-cell .cell-sub {
+    font-size: 13px; color: var(--ink-soft);
+  }
+  .invest-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .invest-table th {
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--steel);
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--line);
+    font-weight: 600;
+  }
+  .invest-table th:last-child { text-align: right; }
+  .invest-table td {
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--line);
+    font-size: 14.5px; line-height: 1.45;
+    vertical-align: top;
+  }
+  .invest-table td:last-child {
+    text-align: right;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .invest-table .row-total td {
+    border-bottom: none;
+    border-top: 2px solid var(--ink);
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 22px; letter-spacing: -0.02em;
+    padding-top: 22px; padding-bottom: 24px;
+  }
+  .invest-table .row-total td:last-child { color: var(--signal); }
+  .invest-pay {
+    display: grid; grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--line);
+  }
+  .invest-pay > div {
+    padding: 24px 28px;
+  }
+  .invest-pay > div:first-child { border-right: 1px solid var(--line); }
+  .invest-pay .pay-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--signal); margin-bottom: 8px;
+  }
+  .invest-pay .pay-amount {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 26px; line-height: 1; letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+  .invest-pay .pay-when {
+    font-size: 13px; color: var(--ink-soft);
+  }
+
+  /* ── Out of scope ────────────────────────────────────── */
+  .oos {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+    border-top: 1px solid var(--line); border-left: 1px solid var(--line);
+  }
+  .oos-row {
+    padding: 22px 28px;
+    border-bottom: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 24px;
+  }
+  .oos-row .oos-label {
+    font-size: 14px; color: var(--ink-soft);
+  }
+  .oos-row .oos-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; color: var(--ink); font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* ── Signature blocks ────────────────────────────────── */
+  /* Container is a fixed-height bordered box. The rotated script
+     lives inside .sig-script so the underline stays perfectly straight
+     and aligned across both signature blocks. */
+  .signature-render {
+    position: relative;
+    height: 64px;
+    padding: 0;
+    border-bottom: 1px solid var(--ink);
+    margin-top: 32px;
+    margin-bottom: 10px;
+    user-select: none;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+  }
+  .signature-render .sig-script {
+    font-family: 'Caveat', cursive;
+    font-weight: 600;
+    font-size: 44px;
+    line-height: 1;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+    display: inline-block;
+    transform: rotate(-1.5deg) translateY(-4px);
+    transform-origin: left bottom;
+    padding-bottom: 6px;
+  }
+  .signature-render.empty .sig-script {
+    color: var(--steel);
+    opacity: 0.45;
+    font-size: 15px;
+    font-style: italic;
+    font-family: 'Archivo', sans-serif;
+    font-weight: 400;
+    transform: none;
+    padding-bottom: 14px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+  .signature-meta {
+    display: flex; gap: 18px; align-items: baseline;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--steel);
+  }
+  .signature-meta .meta-label { color: var(--steel); }
+  .signature-meta .meta-value { color: var(--ink); }
+
+  .sig-input-wrap {
+    margin-top: 32px;
+  }
+  .sig-input {
+    width: 100%;
+    font-family: 'Archivo', sans-serif;
+    font-size: 14px;
+    padding: 12px 14px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.18s var(--ease);
+  }
+  .sig-input:focus { border-color: var(--signal); }
+  .sig-input:disabled { opacity: 0.6; cursor: not-allowed; }
+  .sig-input-label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--steel); margin-bottom: 8px;
+  }
+  .sig-actions {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    margin-top: 18px;
+    align-items: center;
+  }
+  .sig-confirm {
+    background: var(--ink); color: var(--paper); border-color: var(--ink);
+  }
+  .sig-confirm:hover { background: var(--ink-soft); }
+  .sig-confirm:disabled, .sig-confirm.signed {
+    background: var(--signal); border-color: var(--signal);
+    cursor: default; pointer-events: none;
+  }
+  .sig-status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--steel);
+    display: none;
+  }
+  .sig-status.shown { display: inline-flex; align-items: center; gap: 8px; }
+  .sig-status .check { color: var(--signal); font-weight: 700; }
+
+  .sig-postsign {
+    display: none;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px dashed var(--line);
+  }
+  .sig-postsign.shown { display: block; }
+  .sig-postsign-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--signal); margin-bottom: 12px;
+  }
+
+  /* ── Sign-off ────────────────────────────────────────── */
+  .sign {
+    background: var(--paper-soft);
+    background-image:
+      linear-gradient(to right, var(--line-soft) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--line-soft) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-position: -1px -1px;
+    border-top: 1px solid var(--line);
+    padding: 88px 40px;
+  }
+  .sign-inner { max-width: 1200px; margin: 0 auto; }
+  .sign-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 48px;
+    margin-top: 40px;
+  }
+  .sign-block { border-top: 2px solid var(--ink); padding-top: 18px; }
+  .sign-block .sign-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--steel); margin-bottom: 12px;
+  }
+  .sign-block .sign-name {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 22px; line-height: 1; letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+  .sign-block .sign-role {
+    font-size: 13px; color: var(--ink-soft);
+  }
+  .sign-block .sign-line {
+    margin-top: 56px;
+    border-bottom: 1px solid var(--ink);
+    padding-bottom: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--steel);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+
+  /* ── Footer ──────────────────────────────────────────── */
+  footer.footer {
+    border-top: 1px solid var(--line);
+    padding: 32px 40px;
+    background: var(--paper);
+  }
+  .footer-row {
+    max-width: 1200px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    align-items: center; gap: 24px;
+  }
+  .footer-mark { display: inline-flex; align-items: center; gap: 10px; }
+  .footer-mark .wm-text { font-size: 14px; }
+  .footer-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--steel);
+    text-align: center;
+  }
+  .footer-copy {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--steel);
+    letter-spacing: 0.04em;
+    text-align: right;
+  }
+
+  /* ── Responsive ──────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .cover { padding: 64px 24px 56px; }
+    .cover-meta { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    section.s, .sign { padding: 64px 24px; }
+    .loop { padding: 64px 24px; }
+    .scope-grid, .loop-grid, .oos { grid-template-columns: 1fr; }
+    .loop-grid { padding-top: 0; }
+    .loop-grid::before, .loop-grid::after, .loop-pulse { display: none; }
+    .loop-step::before { top: 28px; left: -7px; }
+    .loop-step { padding-left: 32px; }
+    .invest-head, .invest-pay { grid-template-columns: 1fr; }
+    .invest-cell, .invest-pay > div:first-child { border-right: none; border-bottom: 1px solid var(--line); }
+    .invest-pay > div:last-child { border-bottom: none; }
+    .sign-grid { grid-template-columns: 1fr; gap: 32px; }
+    .footer-row { grid-template-columns: 1fr; text-align: center; gap: 16px; }
+    .footer-copy { text-align: center; }
+    .topbar-inner { padding: 14px 24px; }
+    .page { padding: 0 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ TOPBAR ════════════════════════════════════════════ -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="https://suki-systems.com/" class="topbar-mark" aria-label="Suki Systems">
+      <svg class="mark-svg" width="32" height="32" viewBox="0 0 200 200" aria-hidden="true">
+        <g transform="translate(200, 0) scale(-1, 1)" fill="#1A2332">
+          <path d="M 18 36 L 114 78 L 162 78 L 66 36 Z"/>
+          <path d="M 38 122 L 134 164 L 182 164 L 86 122 Z"/>
+        </g>
+      </svg>
+      <span class="wm-text">SUKI SYSTEMS</span>
+    </a>
+    <span class="topbar-meta"><span class="live-dot"></span> Quote · 2026.05.06</span>
+  </div>
+</header>
+
+<!-- ══ COVER ════════════════════════════════════════════ -->
+<section class="cover">
+  <div class="cover-eyebrow"><span class="num">00</span> · Quote for Neyen · PECC e-learning</div>
+  <h1 class="cover-title">PECC simulations <span class="accent">×&nbsp;15</span>.<br>Two&nbsp;weeks. Embedded.</h1>
+  <p class="cover-sub">
+    15 bespoke interactive simulations across 8 modules, built to the prototype's UX bar, embedded directly into the e-learning page, with one iteration round per sim. Start ASAP, finish in two weeks.
+  </p>
+  <div class="cover-meta">
+    <div>Prepared for<strong>Miguel Rescalvo · Neyen</strong></div>
+    <div>From<strong>Yali · Suki Systems</strong></div>
+    <div>Issued<strong>2026.05.06</strong></div>
+    <div>Valid for<strong>14 days</strong></div>
+  </div>
+</section>
+
+<!-- ══ SCOPE ════════════════════════════════════════════ -->
+<section class="s" id="scope">
+  <div class="section-label"><span class="num">01</span> · Scope of work</div>
+  <h2 class="section-title">What you get for each simulation.</h2>
+  <p class="section-lede">
+    Each sim is built to the bar of the PECC prototype — bespoke interactive UX, not a multiple-choice quiz. The framework (engine, scoring, badges, progress, embed wrapper) is built into sim #1 and reused across the rest. No separate setup fee.
+  </p>
+  <div class="scope-grid">
+    <div class="scope-tile">
+      <div class="tile-num"><span>01</span> · Build</div>
+      <div class="tile-name">Bespoke interactive sim</div>
+      <div class="tile-desc">5–7 scenes scripted to the lesson, custom interaction stage, scoring, branching feedback with normative citations.</div>
+    </div>
+    <div class="scope-tile">
+      <div class="tile-num"><span>02</span> · Refine</div>
+      <div class="tile-name">1 iteration round included</div>
+      <div class="tile-desc">One consolidated pass of corrections per sim — content accuracy fixes, copy refinements, minor UX tweaks.</div>
+    </div>
+    <div class="scope-tile">
+      <div class="tile-num"><span>03</span> · Ship</div>
+      <div class="tile-name">Embedded delivery, no popup</div>
+      <div class="tile-desc">Self-contained HTML block — paste directly into the e-learning page, or drop into an iframe. No external dependencies.</div>
+    </div>
+    <div class="scope-tile">
+      <div class="tile-num"><span>04</span> · Hand over</div>
+      <div class="tile-name">Source files, fully editable</div>
+      <div class="tile-desc">Clean HTML / CSS / JS handed over. You can edit anything later without us.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ LOOP / TIMELINE ══════════════════════════════════ -->
+<section class="loop" id="timeline">
+  <div class="loop-inner">
+    <div class="section-label"><span class="num">02</span> · Timeline · the only way two weeks works</div>
+    <h2 class="section-title">I produce the sims. You send back iterations.</h2>
+    <p class="section-lede">
+      15 simulations in 14 days is sprint-paced. We don't wait until the end to review — we run a tight loop in rolling batches of four. Your review of batch 1 happens while I'm building batch 2. As long as iteration notes come back within 48 hours, we land on time.
+    </p>
+    <div class="loop-grid" id="loopGrid">
+      <span class="loop-pulse" aria-hidden="true"></span>
+      <div class="loop-step">
+        <div class="step-num"><span>01</span></div>
+        <div class="step-day">Day 0 — Kickoff</div>
+        <div class="step-name">Brief in</div>
+        <div class="step-desc">Slides + the comprehensive source documents land. 50% deposit invoiced. I lock the start date.</div>
+      </div>
+      <div class="loop-step">
+        <div class="step-num"><span>02</span></div>
+        <div class="step-day">Days 1–4 — Batch 1</div>
+        <div class="step-name">Sims 1–4 ship</div>
+        <div class="step-desc">Framework built, first 4 sims delivered as embed-ready HTML. You start your review.</div>
+      </div>
+      <div class="loop-step">
+        <div class="step-num"><span>03</span></div>
+        <div class="step-day">Days 5–10 — Batches 2 & 3</div>
+        <div class="step-name">Sims 5–12 ship</div>
+        <div class="step-desc">Two more batches of 4. Iterations on previous batches applied in parallel. The loop is overlapped, not sequential.</div>
+      </div>
+      <div class="loop-step">
+        <div class="step-num"><span>04</span></div>
+        <div class="step-day">Days 11–14 — Final batch</div>
+        <div class="step-name">Sims 13–15 + final iterations</div>
+        <div class="step-desc">Last batch shipped, all iteration rounds closed out, final files handed over. Balance invoiced on delivery.</div>
+      </div>
+    </div>
+    <div class="loop-callout">
+      <strong>The one variable we can't engineer around:</strong> if iteration feedback stacks up beyond 48 hours per batch, the back end of the timeline slips by the same amount. The pace is yours to keep — I'll keep mine. We can start <strong>as soon as the source documents land</strong>.
+    </div>
+  </div>
+</section>
+
+<!-- ══ INVESTMENT ═══════════════════════════════════════ -->
+<section class="s" id="investment">
+  <div class="section-label"><span class="num">03</span> · Investment</div>
+  <h2 class="section-title">$275 per simulation. Flat.</h2>
+  <p class="section-lede">
+    Per-unit pricing — easy to scale up or down before you confirm the final count. Framework cost is folded into sim #1 and absorbed across the package. All figures USD.
+  </p>
+
+  <div class="invest-card">
+    <div class="invest-head">
+      <div class="invest-cell">
+        <div class="cell-label">Per simulation</div>
+        <div class="cell-num">$275</div>
+        <div class="cell-sub">Build + 1 iteration round + embed-ready handover</div>
+      </div>
+      <div class="invest-cell">
+        <div class="cell-label">Sims in scope</div>
+        <div class="cell-num">×&nbsp;15</div>
+        <div class="cell-sub">8 modules, 1–2 lessons each</div>
+      </div>
+      <div class="invest-cell">
+        <div class="cell-label">Total</div>
+        <div class="cell-num signal">$4,125</div>
+        <div class="cell-sub">Fixed scope, fixed price, USD</div>
+      </div>
+    </div>
+
+    <table class="invest-table">
+      <thead>
+        <tr><th>Line item</th><th>Detail</th><th>Amount</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>15 × interactive simulations</strong></td>
+          <td style="color: var(--steel);">Bespoke UX at prototype bar, scoring, feedback, embedded delivery.</td>
+          <td>$4,125</td>
+        </tr>
+        <tr>
+          <td><strong>Iteration rounds</strong></td>
+          <td style="color: var(--steel);">1 round per sim, included. Batched within the 2-week window.</td>
+          <td>Included</td>
+        </tr>
+        <tr>
+          <td><strong>Simulation framework</strong></td>
+          <td style="color: var(--steel);">Engine, scene chrome, scoring, badges, progress, embed wrapper. Built in sim #1.</td>
+          <td>Included</td>
+        </tr>
+        <tr>
+          <td><strong>Source files & handover</strong></td>
+          <td style="color: var(--steel);">All HTML/CSS/JS, fully editable, no lock-in.</td>
+          <td>Included</td>
+        </tr>
+        <tr class="row-total">
+          <td>Total</td>
+          <td></td>
+          <td>$4,125 USD</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="invest-pay">
+      <div>
+        <div class="pay-label">Milestone 1 · 50%</div>
+        <div class="pay-amount">$2,062.50</div>
+        <div class="pay-when">On approval. Triggers Day 0 — we start as soon as source docs land. Pay button at the bottom of this page.</div>
+      </div>
+      <div>
+        <div class="pay-label">Milestone 2 · 50%</div>
+        <div class="pay-amount">$2,062.50</div>
+        <div class="pay-when">On final batch delivered + iterations closed out. Stripe invoice sent on the day of delivery — pay by card or bank transfer.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ OUT OF SCOPE ═════════════════════════════════════ -->
+<section class="s" id="out-of-scope">
+  <div class="section-label"><span class="num">04</span> · Out of scope</div>
+  <h2 class="section-title">Add-ons, priced separately if you need them.</h2>
+  <p class="section-lede">
+    Scope is scope. If anything below comes up, we agree it in writing first and I bill separately at these rates.
+  </p>
+  <div class="oos">
+    <div class="oos-row">
+      <span class="oos-label">Additional simulations beyond 15</span>
+      <span class="oos-price">$275 · each</span>
+    </div>
+    <div class="oos-row">
+      <span class="oos-label">Extra iteration rounds beyond the 1 included</span>
+      <span class="oos-price">$80 · per sim, per round</span>
+    </div>
+    <div class="oos-row">
+      <span class="oos-label">LMS / hosting integration beyond embed-ready files</span>
+      <span class="oos-price">Hourly, agreed in advance</span>
+    </div>
+    <div class="oos-row">
+      <span class="oos-label">Net-new scene mechanics outside the prototype's library</span>
+      <span class="oos-price">Custom · quoted on ask</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ SIGN-OFF ═════════════════════════════════════════ -->
+<section class="sign" id="sign">
+  <div class="sign-inner">
+    <div class="section-label"><span class="num">05</span> · Accept</div>
+    <h2 class="section-title">One click. We start the day docs land.</h2>
+    <p class="section-lede">
+      Sign below, then pay the deposit. Card / Apple Pay / bank transfer all work — Stripe handles it. The moment payment clears I send the kickoff email and we start as soon as the source documents arrive.
+    </p>
+    <div class="pay-row" style="margin-bottom: 32px;">
+      <a href="https://buy.stripe.com/6oUbJ20p39aB9P91Rkd3i03" class="btn btn-signal btn-arrow" target="_blank" rel="noopener">Pay deposit · $2,062.50</a>
+    </div>
+    <div class="sign-grid">
+      <!-- ── Yali · pre-signed ─────────────────────────── -->
+      <div class="sign-block">
+        <div class="sign-label">Suki Systems</div>
+        <div class="sign-name">Yali Reichental</div>
+        <div class="sign-role">Founder · Suki Systems · Yali@suki-systems.com</div>
+        <!-- Replace inner span with <img src="signature.png" /> if you have a scanned signature -->
+        <div class="signature-render" aria-label="Yali Reichental signature">
+          <span class="sig-script">Yali Reichental</span>
+        </div>
+        <div class="signature-meta">
+          <span class="meta-label">Signed</span>
+          <span class="meta-value">2026.05.06</span>
+        </div>
+      </div>
+
+      <!-- ── Miguel · fillable ─────────────────────────── -->
+      <div class="sign-block">
+        <div class="sign-label">Neyen</div>
+        <div class="sign-name">Miguel Rescalvo</div>
+        <div class="sign-role">Authorising signatory · Neyen</div>
+        <div class="signature-render empty" id="miguelSignature" aria-label="Miguel Rescalvo signature">
+          <span class="sig-script" id="miguelSigScript">Type your full name to sign</span>
+        </div>
+        <div class="signature-meta">
+          <span class="meta-label">Date</span>
+          <span class="meta-value" id="miguelDate">—</span>
+        </div>
+
+        <div class="sig-input-wrap">
+          <label class="sig-input-label" for="miguelInput">Type your full name</label>
+          <input
+            type="text"
+            id="miguelInput"
+            class="sig-input"
+            placeholder="Miguel Rescalvo"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <div class="sig-actions">
+            <button type="button" class="btn sig-confirm" id="miguelSignBtn" disabled>Sign &amp; accept</button>
+            <span class="sig-status" id="miguelStatus"><span class="check">✓</span> Signed</span>
+          </div>
+        </div>
+
+        <div class="sig-postsign" id="miguelPostsign">
+          <div class="sig-postsign-label">Signed copy emailed to Yali · pay deposit above to lock the start date</div>
+          <div style="font-size: 12px; color: var(--steel); font-family: 'JetBrains Mono', monospace; letter-spacing: 0.04em;">
+            Email didn't open? <a href="#" id="miguelEmailFallback" style="color: var(--ink); text-decoration: underline;">Resend signed copy</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FOOTER ═══════════════════════════════════════════ -->
+<footer class="footer">
+  <div class="footer-row">
+    <a href="https://suki-systems.com/" class="footer-mark">
+      <svg width="22" height="22" viewBox="0 0 200 200" aria-hidden="true">
+        <g transform="translate(200, 0) scale(-1, 1)" fill="#1A2332">
+          <path d="M 18 36 L 114 78 L 162 78 L 66 36 Z"/>
+          <path d="M 38 122 L 134 164 L 182 164 L 86 122 Z"/>
+        </g>
+      </svg>
+      <span class="wm-text">SUKI SYSTEMS</span>
+    </a>
+    <span class="footer-meta">Quote · PECC × 15 · Neyen</span>
+    <span class="footer-copy">© 2026 Suki Systems · suki-systems.com</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  const input    = document.getElementById('miguelInput');
+  const sigScript = document.getElementById('miguelSigScript');
+  const preview  = document.getElementById('miguelSignature');
+  const dateEl   = document.getElementById('miguelDate');
+  const btn      = document.getElementById('miguelSignBtn');
+  const status   = document.getElementById('miguelStatus');
+  const postsign = document.getElementById('miguelPostsign');
+  const fallback = document.getElementById('miguelEmailFallback');
+
+  if (!input) return;
+
+  const today = new Date();
+  const todayStr = today.getFullYear() + '.' +
+                   String(today.getMonth() + 1).padStart(2, '0') + '.' +
+                   String(today.getDate()).padStart(2, '0');
+
+  function trimmedValue() { return input.value.trim(); }
+
+  function buildMailto(name) {
+    const subject = encodeURIComponent('PECC Simulations · Quote signed by ' + name);
+    const body = encodeURIComponent(
+      'Hi Yali,\n\n' +
+      'I have signed and accepted the PECC Simulations quote (15 sims, $4,125 USD, 2-week sprint).\n\n' +
+      '────────────────────────────────────────────\n' +
+      'Signed:  ' + name + '\n' +
+      'Date:    ' + todayStr + '\n' +
+      'Company: Neyen\n' +
+      'Quote:   PECC Simulations × 15\n' +
+      '────────────────────────────────────────────\n\n' +
+      'Please send the Stripe invoice / kickoff details.\n\n' +
+      '— ' + name
+    );
+    return 'mailto:Yali@suki-systems.com?subject=' + subject + '&body=' + body;
+  }
+
+  function updatePreview() {
+    const val = trimmedValue();
+    if (val.length === 0) {
+      sigScript.textContent = 'Type your full name to sign';
+      preview.classList.add('empty');
+      btn.disabled = true;
+      return;
+    }
+    sigScript.textContent = val;
+    preview.classList.remove('empty');
+    btn.disabled = val.split(/\s+/).length < 2;
+  }
+
+  function sign() {
+    const name = trimmedValue();
+    if (name.split(/\s+/).length < 2) return;
+    input.disabled = true;
+    btn.classList.add('signed');
+    btn.disabled = true;
+    btn.textContent = 'Signed ✓';
+    dateEl.textContent = todayStr;
+    status.classList.add('shown');
+    postsign.classList.add('shown');
+    // Auto-email a signed copy to Yali. User-initiated click satisfies
+    // browser security policy for mailto: navigation.
+    window.location.href = buildMailto(name);
+    // Scroll the next-step block into view after the mail handler launches.
+    setTimeout(function () {
+      postsign.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 250);
+  }
+
+  function resendCopy(e) {
+    e.preventDefault();
+    const name = trimmedValue();
+    if (!name) return;
+    window.location.href = buildMailto(name);
+  }
+
+  input.addEventListener('input', updatePreview);
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !btn.disabled) { e.preventDefault(); sign(); }
+  });
+  btn.addEventListener('click', sign);
+  if (fallback) fallback.addEventListener('click', resendCopy);
+})();
+
+/* ── Animated timeline progress line ─────────────────────────── */
+(function () {
+  const grid = document.getElementById('loopGrid');
+  if (!grid) return;
+  const steps = grid.querySelectorAll('.loop-step');
+  if (!steps.length) return;
+
+  // Honour reduced-motion preference: snap to final state, no animation.
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion) {
+    grid.classList.add('in-view');
+    steps.forEach(function (s) { s.classList.add('active'); });
+    return;
+  }
+
+  // Total line draw is 2.6s. Stagger node lights so each fires
+  // just as the line front passes its position.
+  const stepCount = steps.length;
+  const drawMs = 2600;
+
+  const obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      grid.classList.add('in-view');
+      steps.forEach(function (step, i) {
+        const delay = (i / (stepCount - 1)) * drawMs * 0.95 + 80;
+        setTimeout(function () { step.classList.add('active'); }, delay);
+      });
+      obs.unobserve(grid);
+    });
+  }, { threshold: 0.25 });
+
+  obs.observe(grid);
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,12 @@
+# Local Netlify folder
+.netlify
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Stale backups
+index.backup-*.html
+index.live-fetched.html
+index.live.html

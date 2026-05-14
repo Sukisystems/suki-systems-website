@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /q/
+Sitemap: https://suki-systems.com/sitemap.xml
