@@ -843,6 +843,10 @@
   /></noscript>
   <!-- End Meta Pixel Code -->
 
+  <!-- Suki first-party analytics — cross-origin beacon to the Vercel app. -->
+  <script>window.SUKI_TRACK_ENDPOINT = 'https://suki-system-site-analytics.vercel.app/api/track';</script>
+  <script defer src="https://suki-system-site-analytics.vercel.app/analytics.js"></script>
+
   <!-- Meta Pixel — Lead event on cal.com clicks -->
   <script>
   document.addEventListener('DOMContentLoaded', function() {
