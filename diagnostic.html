@@ -896,6 +896,17 @@ fbq('track', 'PageView');
 src="https://www.facebook.com/tr?id=1443546801139010&ev=PageView&noscript=1"
 /></noscript>
 <!-- End Meta Pixel Code -->
+
+<!-- Meta Pixel — Lead event on cal.com clicks -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('a[href*="cal.com"]').forEach(function(el) {
+    el.addEventListener('click', function() {
+      if (typeof fbq !== 'undefined') fbq('track', 'Lead');
+    });
+  });
+});
+</script>
 </head>
 <body>
 
