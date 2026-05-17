@@ -1,0 +1,2384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Revenue-Leak Diagnostic · Suki Systems</title>
+<meta name="description" content="Your business is leaking money. Find out where in 5 minutes." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<style>
+/* ============================================================
+   Suki Systems brand — inlined v2 (Ink/Paper, Archivo)
+   ============================================================ */
+:root {
+  --ink: #1A2332; --ink-soft: #243044;
+  --paper: #F5F2EC; --paper-soft: #EBE7DD;
+  --steel: #5A6478; --signal: #E85A2C;
+  --line: rgba(26, 35, 50, 0.12);
+  --line-soft: rgba(26, 35, 50, 0.06);
+  --font: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-display: 'Archivo Black', 'Archivo', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: var(--font); background: var(--paper); color: var(--ink);
+  font-feature-settings: "ss01", "cv11"; -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+strong { font-weight: 700; }
+
+.grid-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(rgba(26, 35, 50, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26, 35, 50, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 1px 1px, rgba(26, 35, 50, 0.13) 1px, transparent 0);
+  background-size: 80px 80px, 80px 80px, 80px 80px;
+  mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0.35) 75%, rgba(0,0,0,0.10) 100%);
+  -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0.35) 75%, rgba(0,0,0,0.10) 100%);
+}
+
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 40px; z-index: 50;
+  background: rgba(245, 242, 236, 0.92);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.brand { display: inline-flex; align-items: center; gap: 12px; }
+.brand .mark { display: block; }
+.brand .wm {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: 22px; letter-spacing: -0.03em; line-height: 1;
+  color: var(--ink); text-transform: uppercase;
+  display: inline-block; transform: scaleX(0.88);
+  transform-origin: left center; white-space: nowrap;
+}
+.topbar-meta {
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--steel);
+}
+.topbar-meta .live { color: var(--signal); }
+
+main { position: relative; z-index: 1; }
+
+/* ============================================================
+   Type
+   ============================================================ */
+/* Type scale matched to suki-systems.com (May 2026) */
+h1 {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(32px, 4.6vw, 68px);
+  line-height: 0.98; letter-spacing: -0.035em;
+  margin-bottom: 24px; color: var(--ink);
+  transform: scaleX(0.92); transform-origin: left center;
+}
+h1 .accent { color: var(--signal); }
+h2 {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(36px, 5.5vw, 72px);
+  line-height: 0.95; letter-spacing: -0.03em;
+  margin-bottom: 20px; color: var(--ink);
+  transform: scaleX(0.92); transform-origin: left;
+}
+h2 .accent { color: var(--signal); }
+h3 {
+  font-size: clamp(20px, 1.8vw, 26px);
+  font-weight: 700; letter-spacing: -0.02em;
+  line-height: 1.05; margin-bottom: 12px;
+}
+h4 { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+
+.lede {
+  font-size: 19px; line-height: 1.5;
+  color: var(--ink-soft); max-width: 600px; margin-bottom: 32px;
+}
+p { line-height: 1.6; }
+
+.eyebrow {
+  display: inline-flex; align-items: baseline; gap: 14px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--steel); margin-bottom: 24px;
+}
+.eyebrow .num { font-family: var(--mono); color: var(--signal); letter-spacing: 0; }
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 16px 28px;
+  background: var(--ink); color: var(--paper);
+  border: 0; border-radius: 2px;
+  font-family: var(--font); font-weight: 600; font-size: 15px;
+  letter-spacing: 0.02em; cursor: pointer;
+  transition: background 0.18s var(--ease), transform 0.18s var(--ease);
+}
+.btn:hover { background: #000; transform: translateY(-1px); }
+.btn.signal { background: var(--signal); }
+.btn.signal:hover { background: #c94921; }
+.btn.outline {
+  background: transparent; color: var(--ink); border: 1px solid var(--ink);
+}
+.btn.outline:hover { background: var(--ink); color: var(--paper); }
+.btn.large { padding: 20px 32px; font-size: 16px; }
+.btn[disabled] { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.btn .arrow { font-family: var(--mono); font-weight: 600; }
+
+/* ============================================================
+   Sections
+   ============================================================ */
+.section { padding: 120px 40px 80px; border-bottom: 1px solid var(--line); }
+.section.first { padding-top: 140px; }
+.section-inner { max-width: 1200px; margin: 0 auto; width: 100%; }
+
+@media (max-width: 900px) {
+  .topbar { padding: 16px 24px; }
+  .topbar .topbar-meta { display: none; }
+  .section { padding: 110px 24px 60px; }
+}
+
+/* ============================================================
+   Cards
+   ============================================================ */
+.card {
+  background: #fff; border: 1px solid var(--line);
+  border-radius: 4px; padding: 32px; overflow: hidden;
+}
+.card.soft { background: var(--paper-soft); }
+.card.ink { background: var(--ink); color: var(--paper); border-color: rgba(245, 242, 236, 0.08); }
+
+/* ============================================================
+   Stat row
+   ============================================================ */
+.stat-row { display: flex; gap: 32px; flex-wrap: wrap; margin-top: 32px; }
+.stat { flex: 1 1 160px; }
+.stat-num {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(36px, 4.4vw, 56px);
+  letter-spacing: -0.04em; line-height: 1;
+  color: var(--ink); transform: scaleX(0.92); transform-origin: left;
+  display: inline-block; font-variant-numeric: tabular-nums;
+}
+.stat-num.accent { color: var(--signal); }
+.stat-label {
+  font-size: 11px; color: var(--steel); margin-top: 12px;
+  font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+}
+
+/* ============================================================
+   Hero (landing)
+   ============================================================ */
+.hero { padding: 140px 40px 90px; }
+.hero-grid {
+  display: grid; grid-template-columns: 1.4fr 1fr; gap: 64px;
+  align-items: end;
+}
+@media (max-width: 900px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 32px; }
+  .hero { padding: 110px 24px 60px; }
+}
+.hero-side {
+  background: var(--ink); color: var(--paper);
+  border-radius: 4px; padding: 32px;
+}
+.hero-side h4 {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: rgba(245, 242, 236, 0.55);
+  font-weight: 600; margin-bottom: 18px;
+}
+.hero-side ul { list-style: none; }
+.hero-side li {
+  padding: 12px 0; border-bottom: 1px solid rgba(245, 242, 236, 0.08);
+  font-size: 14px; color: rgba(245, 242, 236, 0.85);
+  display: flex; align-items: center; gap: 12px;
+}
+.hero-side li:last-child { border-bottom: 0; }
+.hero-side li::before {
+  content: ''; width: 6px; height: 6px; background: var(--signal);
+  border-radius: 50%; display: inline-block; flex-shrink: 0;
+}
+
+/* ============================================================
+   What-you-get cards
+   ============================================================ */
+.wyg-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+  margin-top: 24px;
+}
+@media (max-width: 800px) { .wyg-grid { grid-template-columns: 1fr; } }
+.wyg-card {
+  background: #fff; border: 1px solid var(--line);
+  border-radius: 4px; padding: 28px;
+}
+.wyg-card .num {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+  color: var(--signal); font-weight: 600; margin-bottom: 16px;
+  text-transform: uppercase; display: block;
+}
+.wyg-card h4 { font-size: 19px; margin-bottom: 10px; }
+.wyg-card p { font-size: 15px; color: var(--ink-soft); line-height: 1.55; }
+
+/* ============================================================
+   Quote strip
+   ============================================================ */
+.quote-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+@media (max-width: 700px) { .quote-grid { grid-template-columns: 1fr; } }
+.quote-card {
+  background: var(--paper-soft); border: 1px solid var(--line-soft);
+  border-radius: 4px; padding: 28px;
+}
+.quote-card blockquote {
+  font-family: var(--font); font-size: 17px; line-height: 1.5;
+  color: var(--ink); font-weight: 500;
+}
+.quote-card cite {
+  display: block; margin-top: 16px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--steel); font-style: normal;
+}
+
+/* ============================================================
+   Footer
+   ============================================================ */
+footer {
+  position: relative; z-index: 1;
+  padding: 40px; border-top: 1px solid var(--line);
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 16px; background: var(--paper);
+}
+footer .meta {
+  font-family: var(--mono); font-size: 11px; color: var(--steel);
+  letter-spacing: 0.04em; text-transform: uppercase;
+}
+
+/* ============================================================
+   Audit interface
+   ============================================================ */
+.view { display: none; }
+.view.active { display: block; }
+
+.audit-shell {
+  min-height: 100vh; padding: 100px 40px 60px;
+  display: flex; align-items: center; justify-content: center;
+}
+@media (max-width: 700px) { .audit-shell { padding: 90px 20px 40px; } }
+.audit-card {
+  width: 100%; max-width: 720px;
+  background: #fff; border: 1px solid var(--line);
+  border-radius: 4px; padding: 56px 56px 40px;
+}
+@media (max-width: 700px) { .audit-card { padding: 36px 24px 28px; } }
+.audit-progress {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 32px;
+}
+.audit-progress-bar {
+  flex: 1; height: 2px; background: var(--line); overflow: hidden;
+}
+.audit-progress-bar > span {
+  display: block; height: 100%; background: var(--ink);
+  width: 0%; transition: width 0.3s var(--ease);
+}
+.audit-progress-meta {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--steel);
+  font-variant-numeric: tabular-nums;
+}
+.audit-q-num {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--signal); margin-bottom: 14px;
+}
+.audit-question {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(26px, 3.4vw, 38px);
+  line-height: 1.05; letter-spacing: -0.03em;
+  color: var(--ink); margin-bottom: 14px;
+  transform: scaleX(0.94); transform-origin: left;
+}
+.audit-help {
+  font-size: 14px; color: var(--steel); margin-bottom: 28px;
+  font-style: italic; max-width: 540px;
+}
+
+.audit-options {
+  display: grid; grid-template-columns: 1fr; gap: 8px;
+  margin-bottom: 32px;
+}
+.audit-options.cols-2 { grid-template-columns: 1fr 1fr; }
+@media (max-width: 600px) { .audit-options.cols-2 { grid-template-columns: 1fr; } }
+.audit-opt {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px;
+  background: #fff; border: 1px solid var(--line); border-radius: 4px;
+  cursor: pointer; transition: all 0.16s var(--ease);
+  font-size: 15px; color: var(--ink);
+  text-align: left;
+}
+.audit-opt:hover { border-color: var(--ink); background: var(--paper); }
+.audit-opt.selected {
+  border-color: var(--ink); background: var(--ink); color: var(--paper);
+}
+.audit-opt .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--line); flex-shrink: 0;
+}
+.audit-opt.selected .dot { background: var(--signal); }
+.audit-opt .key {
+  font-family: var(--mono); font-size: 11px; color: var(--steel);
+  margin-left: auto; letter-spacing: 0.06em;
+}
+.audit-opt.selected .key { color: rgba(245, 242, 236, 0.55); }
+
+/* Slider question */
+.audit-slider {
+  margin-bottom: 32px;
+}
+.slider-display {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(56px, 8vw, 88px);
+  letter-spacing: -0.04em; line-height: 1;
+  color: var(--ink); transform: scaleX(0.92); transform-origin: left;
+  display: inline-block; font-variant-numeric: tabular-nums;
+  margin-bottom: 20px;
+}
+.slider-display .unit {
+  font-family: var(--font); font-weight: 600; font-size: 18px;
+  color: var(--steel); letter-spacing: 0.04em;
+  text-transform: uppercase; margin-left: 12px;
+  display: inline-block; transform: scaleX(1.09);
+}
+.slider-display.accent { color: var(--signal); }
+.audit-slider input[type=range] {
+  width: 100%; -webkit-appearance: none; appearance: none;
+  height: 4px; background: var(--line); outline: none;
+  border-radius: 999px;
+}
+.audit-slider input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--ink); cursor: pointer;
+  border: 3px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+.audit-slider input[type=range]::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--ink); cursor: pointer; border: 3px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+.slider-bounds {
+  display: flex; justify-content: space-between;
+  margin-top: 12px;
+  font-family: var(--mono); font-size: 11px; color: var(--steel);
+  letter-spacing: 0.04em;
+}
+
+/* Dropdown */
+.audit-select {
+  width: 100%; padding: 16px 20px;
+  background: #fff; border: 1px solid var(--line);
+  border-radius: 4px; font: inherit; font-size: 15px;
+  color: var(--ink); cursor: pointer;
+  margin-bottom: 32px;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231A2332' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat; background-position: right 18px center;
+  background-size: 16px;
+}
+.audit-select:focus { outline: none; border-color: var(--ink); }
+
+/* Email gate inputs */
+.gate-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  margin-bottom: 24px;
+}
+@media (max-width: 600px) { .gate-grid { grid-template-columns: 1fr; } }
+.gate-grid .full { grid-column: 1 / -1; }
+.input {
+  width: 100%; padding: 14px 16px;
+  background: #fff; border: 1px solid var(--line);
+  border-radius: 4px; font: inherit; font-size: 15px;
+  color: var(--ink);
+}
+.input:focus { outline: none; border-color: var(--ink); }
+.input::placeholder { color: var(--steel); }
+.input-label {
+  display: block; font-family: var(--mono);
+  font-size: 10px; font-weight: 600; letter-spacing: 0.10em;
+  text-transform: uppercase; color: var(--steel); margin-bottom: 8px;
+}
+
+.audit-actions {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 16px; padding-top: 24px; border-top: 1px solid var(--line-soft);
+}
+.audit-actions .back {
+  font-family: var(--mono); font-size: 12px;
+  color: var(--steel); cursor: pointer; background: none; border: 0;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.audit-actions .back:hover { color: var(--ink); }
+
+.audit-foot {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--steel); letter-spacing: 0.08em;
+  text-transform: uppercase; margin-top: 18px; text-align: center;
+}
+
+/* ============================================================
+   Results view
+   ============================================================ */
+.results-shell { padding: 110px 40px 60px; min-height: 100vh; }
+@media (max-width: 700px) { .results-shell { padding: 90px 20px 40px; } }
+.results-inner { max-width: 1100px; margin: 0 auto; }
+
+.leak-headline {
+  background: var(--ink); color: var(--paper);
+  border-radius: 4px; padding: 56px 48px;
+  margin-bottom: 24px;
+}
+@media (max-width: 700px) { .leak-headline { padding: 36px 24px; } }
+.leak-eyebrow {
+  display: inline-flex; align-items: baseline; gap: 12px;
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.10em; text-transform: uppercase;
+  color: rgba(245, 242, 236, 0.55); margin-bottom: 18px;
+}
+.leak-eyebrow .live {
+  width: 8px; height: 8px; background: var(--signal);
+  border-radius: 50%; display: inline-block;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.leak-headline .label {
+  font-family: var(--mono); font-size: 12px; font-weight: 600;
+  color: rgba(245, 242, 236, 0.65); letter-spacing: 0.06em;
+  text-transform: uppercase; margin-bottom: 12px;
+}
+.leak-number {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(72px, 12vw, 168px);
+  letter-spacing: -0.05em; line-height: 0.9;
+  color: var(--signal); transform: scaleX(0.92); transform-origin: left;
+  display: inline-block; font-variant-numeric: tabular-nums;
+  margin-bottom: 16px;
+}
+.leak-number .per {
+  font-family: var(--font); font-weight: 500;
+  font-size: 22px; color: rgba(245, 242, 236, 0.65);
+  letter-spacing: 0.04em; text-transform: uppercase;
+  margin-left: 16px; display: inline-block; transform: scaleX(1.09);
+}
+.leak-headline p {
+  font-size: 18px; color: rgba(245, 242, 236, 0.85);
+  max-width: 580px; line-height: 1.5;
+}
+
+.results-grid {
+  display: grid; grid-template-columns: 1.3fr 1fr; gap: 24px;
+}
+@media (max-width: 900px) { .results-grid { grid-template-columns: 1fr; } }
+
+.breakdown-card { background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 32px; }
+.breakdown-card h3 {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.10em; text-transform: uppercase; color: var(--steel);
+  margin-bottom: 20px;
+}
+
+.leak-bar { margin-bottom: 18px; }
+.leak-bar:last-child { margin-bottom: 0; }
+.leak-bar-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 6px;
+}
+.leak-bar-head .name { font-weight: 700; font-size: 15px; }
+.leak-bar-head .num {
+  font-family: var(--mono); font-weight: 600; font-size: 14px;
+  color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.leak-bar-track { height: 10px; background: var(--paper-soft); border-radius: 2px; overflow: hidden; }
+.leak-bar-fill {
+  height: 100%; background: var(--ink);
+  transition: width 0.8s var(--ease);
+}
+.leak-bar:first-child .leak-bar-fill { background: var(--signal); }
+.leak-bar-detail {
+  font-size: 13px; color: var(--ink-soft); line-height: 1.55;
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.fix-card { background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 32px; }
+.fix-card h3 {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.10em; text-transform: uppercase; color: var(--steel);
+  margin-bottom: 18px;
+}
+.fix-item { padding: 16px 0; border-bottom: 1px solid var(--line-soft); }
+.fix-item:last-child { border-bottom: 0; padding-bottom: 0; }
+.fix-item .head {
+  display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px;
+}
+.fix-item .num {
+  font-family: var(--mono); font-size: 13px; font-weight: 700;
+  color: var(--signal); flex-shrink: 0;
+}
+.fix-item .name { font-weight: 700; font-size: 15px; color: var(--ink); }
+.fix-item .desc { font-size: 13.5px; color: var(--ink-soft); line-height: 1.55; margin-bottom: 8px; }
+.fix-item .payback {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--steel);
+}
+.fix-summary {
+  margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line);
+  font-size: 14px; color: var(--ink-soft); line-height: 1.55;
+}
+.fix-summary strong { color: var(--ink); font-weight: 700; }
+
+/* Case studies grid */
+.case-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-top: 24px;
+}
+@media (max-width: 700px) { .case-grid { grid-template-columns: 1fr; } }
+.case-card {
+  background: var(--paper-soft); border: 1px solid var(--line-soft);
+  border-radius: 4px; padding: 28px;
+}
+.case-card .label {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.10em; text-transform: uppercase;
+  color: var(--signal); margin-bottom: 12px; display: block;
+}
+.case-card h4 { font-size: 18px; margin-bottom: 10px; line-height: 1.2; }
+.case-card p { font-size: 14px; color: var(--ink-soft); line-height: 1.55; margin-bottom: 14px; }
+.case-card .stats {
+  display: flex; gap: 18px; flex-wrap: wrap;
+  padding-top: 14px; border-top: 1px solid var(--line);
+}
+.case-card .stats .s strong {
+  display: block; font-family: var(--font-display);
+  font-size: 22px; line-height: 1; letter-spacing: -0.03em;
+  color: var(--ink); transform: scaleX(0.92); transform-origin: left;
+  display: inline-block; font-variant-numeric: tabular-nums;
+}
+.case-card .stats .s span {
+  display: block; font-size: 10px; letter-spacing: 0.10em;
+  text-transform: uppercase; color: var(--steel); margin-top: 4px;
+  font-weight: 600;
+}
+
+/* CTA block */
+.cta-block {
+  background: var(--ink); color: var(--paper);
+  border-radius: 4px; padding: 56px 48px;
+  margin-top: 24px; display: grid;
+  grid-template-columns: 1.3fr 1fr; gap: 40px; align-items: center;
+}
+@media (max-width: 800px) {
+  .cta-block { grid-template-columns: 1fr; padding: 36px 24px; }
+}
+.cta-block h2 {
+  color: var(--paper); font-size: clamp(28px, 3.6vw, 44px);
+  margin-bottom: 16px;
+}
+.cta-block h2 .accent { color: var(--signal); }
+.cta-block p {
+  color: rgba(245, 242, 236, 0.75); font-size: 16px;
+  line-height: 1.55; margin-bottom: 24px; max-width: 540px;
+}
+.cta-block .scarcity {
+  font-family: var(--mono); font-size: 12px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--signal); margin-bottom: 24px; display: block;
+}
+.cta-block .btn {
+  background: var(--paper); color: var(--ink);
+}
+.cta-block .btn:hover { background: #fff; }
+.cta-block .alt {
+  margin-top: 14px; font-size: 13px; color: rgba(245, 242, 236, 0.55);
+}
+.cta-block .alt a { color: var(--paper); border-bottom: 1px solid currentColor; }
+
+/* Trust block */
+.trust-row {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+  margin-top: 32px; padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 700px) { .trust-row { grid-template-columns: 1fr; } }
+.trust-item h4 {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.10em; text-transform: uppercase;
+  color: var(--steel); margin-bottom: 8px;
+}
+.trust-item p { font-size: 14px; color: var(--ink-soft); line-height: 1.5; }
+
+/* hide content while in audit/results — simulate full-screen */
+body.in-audit .topbar { background: rgba(245, 242, 236, 0.95); }
+body.in-audit .grid-bg { opacity: 0.5; }
+
+/* ============================================================
+   Scanning view — between gate and results
+   ============================================================ */
+.scanning-shell {
+  min-height: 100vh; padding: 100px 40px 60px;
+  display: flex; align-items: center; justify-content: center;
+}
+.scanning-card {
+  width: 100%; max-width: 720px;
+  background: var(--ink); color: var(--paper);
+  border-radius: 4px; padding: 56px 48px;
+  position: relative; overflow: hidden;
+}
+@media (max-width: 700px) { .scanning-card { padding: 40px 28px; } }
+.scanning-eyebrow {
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.10em; text-transform: uppercase;
+  color: rgba(245, 242, 236, 0.55); margin-bottom: 14px;
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.scanning-eyebrow .live {
+  width: 8px; height: 8px; background: var(--signal);
+  border-radius: 50%; display: inline-block;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.scanning-headline {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1; letter-spacing: -0.03em;
+  color: var(--paper); margin-bottom: 24px;
+  transform: scaleX(0.92); transform-origin: left;
+}
+.scanning-headline .domain {
+  color: var(--signal);
+  font-family: var(--mono); font-size: 0.6em;
+  letter-spacing: 0; text-transform: lowercase;
+  display: inline-block; transform: scaleX(1.09);
+  margin-left: 4px;
+}
+.scan-steps {
+  list-style: none; padding: 0; margin: 32px 0 0;
+  border-top: 1px solid rgba(245, 242, 236, 0.10);
+}
+.scan-step {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(245, 242, 236, 0.10);
+  font-family: var(--mono); font-size: 13px;
+  color: rgba(245, 242, 236, 0.45);
+  transition: color 0.3s var(--ease);
+}
+.scan-step.active { color: var(--paper); }
+.scan-step.done { color: rgba(245, 242, 236, 0.65); }
+.scan-step .marker {
+  width: 14px; height: 14px; flex-shrink: 0;
+  border: 1px solid rgba(245, 242, 236, 0.25);
+  border-radius: 50%; position: relative;
+  transition: all 0.3s var(--ease);
+}
+.scan-step.active .marker {
+  border-color: var(--signal);
+  border-top-color: transparent; border-right-color: transparent;
+  animation: spin 0.9s linear infinite;
+}
+.scan-step.done .marker {
+  background: var(--signal); border-color: var(--signal);
+}
+.scan-step.done .marker::after {
+  content: ''; position: absolute; inset: 3px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F5F2EC' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'><polyline points='5 12 10 17 19 8'/></svg>");
+  background-size: contain; background-repeat: no-repeat;
+}
+.scan-step .label { flex: 1; letter-spacing: 0.02em; }
+.scan-step .meta {
+  font-size: 11px; opacity: 0.6; letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.scan-foot {
+  margin-top: 24px;
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.06em; color: rgba(245, 242, 236, 0.45);
+}
+
+/* ============================================================
+   AI-enriched sections on the results page
+   ============================================================ */
+.site-finding {
+  background: var(--paper-soft); border: 1px solid var(--line-soft);
+  border-radius: 4px; padding: 28px 32px;
+  margin-top: 24px;
+}
+.site-finding .head {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 14px;
+}
+.site-finding .label {
+  font-family: var(--mono); font-size: 11px;
+  font-weight: 600; letter-spacing: 0.10em;
+  text-transform: uppercase; color: var(--signal);
+}
+.site-finding .domain {
+  font-family: var(--mono); font-size: 12px;
+  color: var(--steel);
+}
+.site-finding p {
+  font-size: 15.5px; line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+/* 5-category score grid */
+.scores-card {
+  background: #fff; border: 1px solid var(--line);
+  border-radius: 4px; padding: 32px;
+  margin-top: 24px;
+}
+.scores-card h3 {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.10em; text-transform: uppercase; color: var(--steel);
+  margin-bottom: 24px;
+}
+.scores-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+}
+@media (max-width: 700px) { .scores-grid { grid-template-columns: repeat(2, 1fr); } }
+.score-tile {
+  border: 1px solid var(--line);
+  border-radius: 4px; padding: 18px 16px;
+  text-align: left;
+}
+.score-tile .name {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--steel); margin-bottom: 12px;
+}
+.score-tile .num {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: 32px; line-height: 1; letter-spacing: -0.04em;
+  color: var(--ink); transform: scaleX(0.92); transform-origin: left;
+  display: inline-block; margin-bottom: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.score-tile .num.high { color: var(--signal); }
+.score-tile .severity-bar {
+  height: 3px; background: var(--paper-soft); overflow: hidden;
+  border-radius: 2px;
+}
+.score-tile .severity-fill {
+  height: 100%; background: var(--ink);
+  transition: width 0.8s var(--ease);
+}
+.score-tile.high .severity-fill { background: var(--signal); }
+.score-tile .dollar {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--ink-soft); margin-top: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* AI personalised "why for you" line on fix items */
+.fix-item .why-you {
+  font-size: 13px; color: var(--ink-soft); line-height: 1.5;
+  margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line-soft);
+}
+.fix-item .why-you::before {
+  content: '↳ '; color: var(--signal); font-weight: 700;
+}
+
+/* Inline gate error — duplicate-email lock */
+.gate-error {
+  margin: 0 0 20px;
+  padding: 16px 20px;
+  background: rgba(232, 90, 44, 0.08);
+  border: 1px solid rgba(232, 90, 44, 0.30);
+  border-left: 3px solid var(--signal);
+  border-radius: 4px;
+  font-size: 14px; line-height: 1.55;
+  color: var(--ink);
+  display: none;
+}
+.gate-error.show { display: block; }
+.gate-error strong { color: var(--signal); font-weight: 700; }
+.gate-error a {
+  color: var(--ink); border-bottom: 1px solid var(--ink);
+  font-weight: 600;
+}
+
+/* ============================================================
+   Chart cards — radar, projection, recovery curve
+   ============================================================ */
+.chart-card {
+  background: #fff; border: 1px solid var(--line);
+  border-radius: 4px; padding: 32px;
+}
+.chart-card.ink {
+  background: var(--ink); color: var(--paper);
+  border-color: rgba(245, 242, 236, 0.08);
+}
+.chart-card .head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 8px;
+}
+.chart-card .label {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.10em; text-transform: uppercase; color: var(--steel);
+}
+.chart-card.ink .label { color: rgba(245, 242, 236, 0.55); }
+.chart-card .meta {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--steel);
+}
+.chart-card.ink .meta { color: rgba(245, 242, 236, 0.45); }
+.chart-card h4 {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: 22px; line-height: 1.05; letter-spacing: -0.02em;
+  color: var(--ink); margin-bottom: 24px;
+  transform: scaleX(0.94); transform-origin: left;
+}
+.chart-card.ink h4 { color: var(--paper); }
+.chart-card h4 .accent { color: var(--signal); }
+.chart-frame { position: relative; height: 280px; }
+.chart-frame.tall { height: 340px; }
+.chart-foot {
+  margin-top: 16px; padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 13px; color: var(--ink-soft); line-height: 1.55;
+}
+.chart-card.ink .chart-foot {
+  color: rgba(245, 242, 236, 0.75);
+  border-top-color: rgba(245, 242, 236, 0.10);
+}
+.chart-foot strong { color: var(--ink); font-weight: 700; }
+.chart-card.ink .chart-foot strong { color: var(--signal); font-weight: 700; }
+
+.charts-row {
+  display: grid; grid-template-columns: 1fr 1.3fr; gap: 24px;
+  margin-top: 24px;
+}
+@media (max-width: 900px) { .charts-row { grid-template-columns: 1fr; } }
+
+</style>
+</head>
+<body>
+
+<div class="grid-bg" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="mark" width="32" height="32" viewBox="0 0 200 200" aria-hidden="true">
+      <g transform="translate(200, 0) scale(-1, 1)" fill="#1A2332">
+        <path d="M 18 36 L 114 78 L 162 78 L 66 36 Z"/>
+        <path d="M 38 122 L 134 164 L 182 164 L 86 122 Z"/>
+      </g>
+    </svg>
+    <span class="wm">SUKI SYSTEMS</span>
+  </div>
+  <div class="topbar-meta"><span class="live">●</span> &nbsp;Revenue-Leak Diagnostic · <strong>Free this month</strong></div>
+</header>
+
+<main>
+
+  <!-- ============================================================
+       VIEW 1 · LANDING
+       ============================================================ -->
+  <section id="view-landing" class="view active">
+
+    <div class="hero">
+      <div class="section-inner">
+        <div class="hero-grid">
+          <div>
+            <div class="eyebrow"><span class="num">01</span> For SMB owners running on spreadsheets and willpower</div>
+            <h1>Your business is <span class="accent">leaking money</span>. Find out where in 5 minutes.</h1>
+            <p class="lede">Answer 13 questions about how your business runs today. We'll show you exactly where you're leaking time and revenue — and the three AI systems that would plug the leak.</p>
+            <button class="btn signal large" onclick="startAudit()">Start the diagnostic <span class="arrow">→</span></button>
+            <div style="margin-top:18px;font-family:var(--mono);font-size:11px;color:var(--steel);letter-spacing:0.08em;text-transform:uppercase;">
+              5 minutes · Free · Your number on the next screen
+            </div>
+          </div>
+          <div class="hero-side">
+            <h4>What you get</h4>
+            <ul>
+              <li>Your $-leak number</li>
+              <li>5 categories scored against benchmarks</li>
+              <li>3 AI systems matched to your answers</li>
+              <li>Case studies from clients who shipped each one</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="stat-row" style="margin-top:64px;">
+          <div class="stat"><div class="stat-num">50+</div><div class="stat-label">AI builds shipped</div></div>
+          <div class="stat"><div class="stat-num">2 wk</div><div class="stat-label">Average ship time</div></div>
+          <div class="stat"><div class="stat-num accent">100%</div><div class="stat-label">You own the system</div></div>
+        </div>
+      </div>
+    </div>
+
+    <section class="section">
+      <div class="section-inner">
+        <div class="eyebrow"><span class="num">02</span> What you'll get</div>
+        <h2>Your diagnostic, <span class="accent">in three pieces.</span></h2>
+        <p class="lede">A specific dollar number. The five places it's coming from. The three systems that would plug the biggest of them.</p>
+
+        <div class="wyg-grid">
+          <div class="wyg-card">
+            <span class="num">01 · The number</span>
+            <h4>Your leak in dollars.</h4>
+            <p>A specific $ estimate of the revenue and time you're losing to manual processes — every year. Anchored on your real call volume, response time, and customer LTV.</p>
+          </div>
+          <div class="wyg-card">
+            <span class="num">02 · The breakdown</span>
+            <h4>Where it's coming from.</h4>
+            <p>Five leak categories scored against benchmarks from 50+ live AI builds. You see the drivers — lead capture, conversion, manual ops, data visibility, tool sprawl — not just the total.</p>
+          </div>
+          <div class="wyg-card">
+            <span class="num">03 · The fix</span>
+            <h4>Three systems to plug it.</h4>
+            <p>A personalized recommendation of the three AI/automation systems that would pay back fastest, with case studies of clients who shipped each one. Estimated payback windows included.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-inner">
+        <div class="eyebrow"><span class="num">03</span> Proof</div>
+        <h2>Same diagnostic <span class="accent">we run with paying clients.</span></h2>
+        <p class="lede">Free, because if it doesn't show you a real leak, you shouldn't pay us anyway.</p>
+
+        <div class="quote-grid">
+          <div class="quote-card">
+            <blockquote>"In 12 months: $1.2M in revenue, 25+ calls/day handled, 3× faster response. Bilingual voice agent shipped in two weeks."</blockquote>
+            <cite>Gemstone Builders · Construction</cite>
+          </div>
+          <div class="quote-card">
+            <blockquote>"Recovered $127K and cut churn 23%. Replaced 10+ hours of manual spreadsheets a week with a single dashboard."</blockquote>
+            <cite>White City Fitness · Studios</cite>
+          </div>
+        </div>
+
+        <div style="margin-top:48px;">
+          <button class="btn signal large" onclick="startAudit()">Start the diagnostic <span class="arrow">→</span></button>
+          <div style="margin-top:18px;font-family:var(--mono);font-size:11px;color:var(--steel);letter-spacing:0.08em;text-transform:uppercase;">
+            13 questions · 5 minutes · Your number on the next screen
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="brand">
+        <svg class="mark" width="22" height="22" viewBox="0 0 200 200">
+          <g transform="translate(200, 0) scale(-1, 1)" fill="#1A2332">
+            <path d="M 18 36 L 114 78 L 162 78 L 66 36 Z"/>
+            <path d="M 38 122 L 134 164 L 182 164 L 86 122 Z"/>
+          </g>
+        </svg>
+        <span class="wm" style="font-size:16px;">SUKI SYSTEMS</span>
+      </div>
+      <div class="meta">Suki Systems · suki-systems.com · yali@suki-systems.com</div>
+    </footer>
+  </section>
+
+  <!-- ============================================================
+       VIEW 2 · AUDIT
+       ============================================================ -->
+  <section id="view-audit" class="view">
+    <div class="audit-shell">
+      <div class="audit-card">
+        <div class="audit-progress">
+          <span class="audit-progress-meta" id="progressLabel">Q 01 / 13</span>
+          <div class="audit-progress-bar"><span id="progressFill"></span></div>
+          <span class="audit-progress-meta" id="progressPct">8%</span>
+        </div>
+        <div id="questionContainer"></div>
+        <div class="audit-actions">
+          <button class="back" id="backBtn" onclick="prevQuestion()">← Back</button>
+          <button class="btn" id="nextBtn" onclick="nextQuestion()" disabled>Next <span class="arrow">→</span></button>
+        </div>
+        <div class="audit-foot">5 minutes · Free · Your number on the next screen</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       VIEW 3 · EMAIL GATE
+       ============================================================ -->
+  <section id="view-gate" class="view">
+    <div class="audit-shell">
+      <div class="audit-card">
+        <div class="audit-q-num">Last step</div>
+        <div class="audit-question">Where should we <span style="color:var(--signal);">send your diagnostic?</span></div>
+        <p class="audit-help">We send the report immediately and one follow-up. That's it.</p>
+
+        <div class="gate-error" id="gateError"></div>
+
+        <div class="gate-grid">
+          <div>
+            <label class="input-label">First name</label>
+            <input type="text" class="input" id="gateName" placeholder="Sam" />
+          </div>
+          <div>
+            <label class="input-label">Company</label>
+            <input type="text" class="input" id="gateCompany" placeholder="Acme Roofing" />
+          </div>
+          <div class="full">
+            <label class="input-label">Work email</label>
+            <input type="email" class="input" id="gateEmail" placeholder="sam@acmeroofing.com" />
+          </div>
+          <div class="full">
+            <label class="input-label">Phone (optional)</label>
+            <input type="tel" class="input" id="gatePhone" placeholder="+1 555 0123" />
+          </div>
+          <div class="full">
+            <label class="input-label">Company URL (optional · we'll scan it for sharper findings)</label>
+            <input type="url" class="input" id="gateUrl" placeholder="https://acmeroofing.com" />
+          </div>
+        </div>
+
+        <div class="audit-actions">
+          <button class="back" onclick="setView('view-audit')">← Back to diagnostic</button>
+          <button class="btn signal" id="seeResultsBtn" onclick="submitGate()">See my results <span class="arrow">→</span></button>
+        </div>
+        <div class="audit-foot">Two days from now you'll get one follow-up. That's it.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       VIEW 4 · SCANNING (AI layer running)
+       ============================================================ -->
+  <section id="view-scanning" class="view">
+    <div class="scanning-shell">
+      <div class="scanning-card">
+        <div class="scanning-eyebrow"><span class="live"></span> Running diagnostic</div>
+        <div class="scanning-headline">Scanning <span class="domain" id="scanDomain">your business</span></div>
+        <p style="color:rgba(245,242,236,0.65);font-size:15px;line-height:1.5;max-width:520px;">
+          Two parallel passes — one over your answers, one over your site. The AI is matching your specific shape of leak against 50+ live builds.
+        </p>
+        <ul class="scan-steps" id="scanSteps">
+          <li class="scan-step" data-step="0"><span class="marker"></span><span class="label">Loading your responses</span><span class="meta">step 01</span></li>
+          <li class="scan-step" data-step="1"><span class="marker"></span><span class="label">Fetching your homepage</span><span class="meta">step 02</span></li>
+          <li class="scan-step" data-step="2"><span class="marker"></span><span class="label">Computing the leak math</span><span class="meta">step 03</span></li>
+          <li class="scan-step" data-step="3"><span class="marker"></span><span class="label">Scoring all 5 categories</span><span class="meta">step 04</span></li>
+          <li class="scan-step" data-step="4"><span class="marker"></span><span class="label">Matching the 3 systems</span><span class="meta">step 05</span></li>
+          <li class="scan-step" data-step="5"><span class="marker"></span><span class="label">Drafting your report</span><span class="meta">step 06</span></li>
+        </ul>
+        <div class="scan-foot" id="scanFoot">Usually 8 – 20 seconds. Hold tight.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       VIEW 5 · RESULTS
+       ============================================================ -->
+  <section id="view-results" class="view">
+    <div class="results-shell">
+      <div class="results-inner">
+
+        <div class="leak-headline">
+          <div class="leak-eyebrow"><span class="live"></span> Diagnostic complete · <span id="resultsName">Your</span> report</div>
+          <div class="label">Estimated revenue leak</div>
+          <div class="leak-number" id="totalLeak">$0<span class="per">/ year</span></div>
+          <p>Here's where it's coming from — and the three systems that would plug the biggest of it.</p>
+        </div>
+
+        <!-- AI-generated site finding · hidden by default, shown when AI returns -->
+        <div class="site-finding" id="siteFinding" style="display:none;">
+          <div class="head">
+            <span class="label">● What we found on your site</span>
+            <span class="domain" id="siteFindingDomain"></span>
+          </div>
+          <p id="siteFindingBody"></p>
+        </div>
+
+        <!-- 5-category severity scores -->
+        <div class="scores-card">
+          <h3>5-category severity score</h3>
+          <div class="scores-grid" id="scoresGrid"></div>
+        </div>
+
+        <div class="results-grid" style="margin-top:24px;">
+          <div class="breakdown-card">
+            <h3>The leak breakdown</h3>
+            <div id="leakBars"></div>
+          </div>
+
+          <div class="fix-card">
+            <h3>The 3-system recommendation</h3>
+            <div id="fixList"></div>
+            <div class="fix-summary" id="fixSummary"></div>
+          </div>
+        </div>
+
+        <!-- Charts row · radar + 36-month compounding projection -->
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="head">
+              <span class="label">● Severity shape</span>
+              <span class="meta">5 axes</span>
+            </div>
+            <h4>The shape of <span class="accent">your leak</span>.</h4>
+            <div class="chart-frame"><canvas id="radarChart"></canvas></div>
+            <div class="chart-foot" id="radarFoot"></div>
+          </div>
+          <div class="chart-card ink">
+            <div class="head">
+              <span class="label">● 36-month projection</span>
+              <span class="meta">if nothing changes</span>
+            </div>
+            <h4>The compounding <span class="accent">cost of waiting</span>.</h4>
+            <div class="chart-frame tall"><canvas id="projectionChart"></canvas></div>
+            <div class="chart-foot" id="projectionFoot"></div>
+          </div>
+        </div>
+
+        <div style="margin-top:48px;">
+          <div class="eyebrow"><span class="num">04</span> How Suki's clients fixed this</div>
+          <h2>Same shape of leak. <span class="accent">Same fix.</span></h2>
+          <div class="case-grid" id="caseGrid"></div>
+        </div>
+
+        <!-- Recovery curve · before/after the 3 systems -->
+        <div class="chart-card" style="margin-top:24px;">
+          <div class="head">
+            <span class="label">● Recovery curve</span>
+            <span class="meta">your leak vs your leak after the fix</span>
+          </div>
+          <h4>What changes if you ship <span class="accent">the three systems</span>.</h4>
+          <div class="chart-frame tall"><canvas id="recoveryChart"></canvas></div>
+          <div class="chart-foot" id="recoveryFoot"></div>
+        </div>
+
+        <div class="cta-block">
+          <div>
+            <span class="scarcity" id="scarcityLine">● 4 builds / month · 2 spots open in next month</span>
+            <h2>Want a 30-min call to <span class="accent">scope these three systems?</span></h2>
+            <p>On the call, we'll walk through your diagnostic, scope the build, and give you a price + timeline. No pitch, no slide deck. If we're not a fit, we'll tell you who is.</p>
+            <a href="https://calendly.com/yali-suki-systems/30min" target="_blank" rel="noopener" class="btn large">Book the call <span class="arrow">→</span></a>
+            <div class="alt">Or hit reply to your email — we'll send a written response within 24 hours.</div>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:11px;letter-spacing:0.10em;text-transform:uppercase;color:rgba(245,242,236,0.55);margin-bottom:16px;">The agenda is your diagnostic</div>
+            <div style="font-size:14px;color:rgba(245,242,236,0.85);line-height:1.6;">
+              We'll walk through your specific leak categories, the three matched systems, and a fixed price + 2–3 week timeline. If the math doesn't make sense for your business, we'll say so.
+            </div>
+          </div>
+        </div>
+
+        <div class="trust-row">
+          <div class="trust-item">
+            <h4>● Live</h4>
+            <p>50+ AI builds shipped across construction, healthcare, fitness, B2B services and retail.</p>
+          </div>
+          <div class="trust-item">
+            <h4>● Pace</h4>
+            <p>Two-week ship pace on most builds. Fixed price. One handover session.</p>
+          </div>
+          <div class="trust-item">
+            <h4>● Ownership</h4>
+            <p>You own the system. No lock-in, no monthly platform fee, no "Suki credits".</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ============================================================
+   AI BACKEND CONFIG  ·  read this before deploying
+   ============================================================
+   The diagnostic ships with two modes:
+
+   1. LOCAL-ONLY  (default — works out of the box)
+      Math runs in the browser. Five categories scored, three
+      systems matched, generic-but-honest commentary.
+
+   2. AI-ENRICHED  (set AI_ENDPOINT below)
+      Browser POSTs the answers + URL to your webhook. Your
+      backend (Make.com / n8n / serverless function) fetches
+      the user's site, calls Claude, returns enriched JSON.
+      The page swaps in the AI's findings on top of the local
+      math. If the call fails or times out, it falls back to
+      local-only — the user always sees a report.
+
+   ────────────────────────────────────────────────────────────
+   REQUEST  ·  POST AI_ENDPOINT  (Content-Type: application/json)
+   ────────────────────────────────────────────────────────────
+   {
+     "meta":   { "name", "email", "company", "phone", "url" },
+     "answers": { industry, revenue, calls_per_week, unanswered_pct,
+                  ltv, response_speed, follow_up, manual_hours,
+                  hourly_cost, reporting_time, tool_count,
+                  priority, timeline },
+     "computed": { capture, convert, manual_ops, visibility, tools,
+                   total, capped }
+   }
+
+   ────────────────────────────────────────────────────────────
+   RESPONSE  ·  JSON (all fields optional — page degrades gracefully)
+   ────────────────────────────────────────────────────────────
+   {
+     "duplicate": true,                  // if email already submitted in
+                                         //   your Airtable / Sheet / DB.
+                                         //   Page bounces back to gate
+                                         //   with a friendly message.
+
+     "total": 345456,                    // overrides computed total
+     "breakdown": {                      // overrides computed bars
+       "capture": 112340, "convert": 88412,
+       "manual_ops": 56234, "visibility": 28470, "tools": 12500
+     },
+     "scores": {                         // 0-100 severity per category
+       "capture": 78, "convert": 45, "manual_ops": 62,
+       "visibility": 30, "tools": 18
+     },
+     "site_finding": "We pulled acmeroofing.com — homepage, contact form, and pricing. The form is the only inbound capture; there's no chat or callback widget. Quote-request emails route to a Gmail inbox.",
+     "leak_findings": {                  // personalized commentary per category
+       "capture": "Your contact form is the single inbound channel and your phone routes to a generic IVR.",
+       "convert": "...", "manual_ops": "...", "visibility": "...", "tools": "..."
+     },
+     "systems": [                        // overrides 3-system rec; first = top
+       { "key": "capture", "name": "AI Voice + SMS Agent",
+         "desc": "Picks up missed calls, qualifies, books.",
+         "payback": "3 – 4 weeks",
+         "why": "Your phone goes to voicemail after 4pm; this captures the 30% of calls happening after-hours." }
+     ]
+   }
+
+   Implementation note for Yali:
+   - Make.com pattern: Webhook → HTTP (fetch URL) → Anthropic
+     module (with our system prompt) → Webhook Response.
+   - n8n equivalent works too.
+   - Set Anthropic API key as a Make/n8n connection secret.
+     Never put it in this file — the browser would expose it.
+   ============================================================ */
+const AI_ENDPOINT = 'https://hook.us2.make.com/z278ci2ks143d9kdplbe9bsyvrrnz9b1';
+const AI_TIMEOUT_MS = 35000;   // give up after 35s, show local-only (Firecrawl + Claude + ClickUp)
+
+/* ============================================================
+   ONE-DIAGNOSTIC-PER-EMAIL LOCK
+   ============================================================
+   Frontend lock via localStorage — prevents the same browser
+   from submitting twice with the same email. Bypassable via
+   incognito or different browser, so the BACKEND must enforce
+   the same rule for real:
+
+   - In Make.com: add an Airtable / Google Sheets "submitted"
+     check after the webhook. If meta.email already exists,
+     return { duplicate: true } and exit early.
+   - The frontend respects the duplicate flag on the response
+     and shows the "we already sent yours" panel.
+
+   For QA / testing: append ?reset=1 to the URL to clear the
+   local store before submitting.
+   ============================================================ */
+const DEDUP_STORAGE_KEY = 'suki_diag_submitted_emails';
+
+function getSubmittedEmails() {
+  try {
+    const raw = localStorage.getItem(DEDUP_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) { return []; }
+}
+function hasSubmitted(email) {
+  if (!email) return false;
+  const list = getSubmittedEmails();
+  return list.some(e => (e.email || '').toLowerCase() === email.toLowerCase());
+}
+function recordSubmission(email) {
+  if (!email) return;
+  try {
+    const list = getSubmittedEmails();
+    list.push({ email: email.toLowerCase(), ts: Date.now() });
+    localStorage.setItem(DEDUP_STORAGE_KEY, JSON.stringify(list));
+  } catch (e) {}
+}
+// QA reset: ?reset=1 clears the local lock
+if (typeof window !== 'undefined' && /[?&]reset=1\b/.test(window.location.search)) {
+  try { localStorage.removeItem(DEDUP_STORAGE_KEY); } catch (e) {}
+}
+
+/* ============================================================
+   Audit data
+   ============================================================ */
+const QUESTIONS = [
+  {
+    id: 'industry',
+    section: 'Profile',
+    text: "What industry are you in?",
+    type: 'select',
+    options: [
+      { v: 'fitness',     l: 'Fitness · gyms · studios' },
+      { v: 'healthcare',  l: 'Healthcare · clinics · practices' },
+      { v: 'construction',l: 'Construction & trades' },
+      { v: 'pro',         l: 'Professional services' },
+      { v: 'retail',      l: 'Retail / e-commerce' },
+      { v: 'real_estate', l: 'Real estate' },
+      { v: 'b2b',         l: 'B2B services' },
+      { v: 'other',       l: 'Something else' }
+    ]
+  },
+  {
+    id: 'revenue',
+    section: 'Profile',
+    text: "What's your annual revenue?",
+    type: 'options',
+    options: [
+      { v: 'lt500k',  l: 'Under $500K' },
+      { v: '500k_1m', l: '$500K – $1M' },
+      { v: '1m_3m',   l: '$1M – $3M' },
+      { v: '3m_5m',   l: '$3M – $5M' },
+      { v: 'gt5m',    l: '$5M+' }
+    ]
+  },
+  {
+    id: 'calls_per_week',
+    section: 'Lead capture',
+    text: "How many calls or messages does your business get from prospects in a typical week?",
+    type: 'slider',
+    min: 0, max: 200, step: 5, def: 40, unit: '/ week'
+  },
+  {
+    id: 'unanswered_pct',
+    section: 'Lead capture',
+    text: "What percentage of those go unanswered, end up in voicemail, or sit unread for more than 4 hours?",
+    help: "Most owners undercount this by half. Take a real guess.",
+    type: 'options',
+    options: [
+      { v: 0,    l: '0% · we answer everything' },
+      { v: 0.05, l: '1 – 10%' },
+      { v: 0.18, l: '11 – 25%' },
+      { v: 0.38, l: '26 – 50%' },
+      { v: 0.65, l: '50%+' }
+    ]
+  },
+  {
+    id: 'ltv',
+    section: 'Lead capture',
+    text: "What's the lifetime value of a typical customer?",
+    help: "Lifetime value, not first transaction. Roughly is fine.",
+    type: 'slider',
+    min: 100, max: 50000, step: 100, def: 2000, unit: '$'
+  },
+  {
+    id: 'response_speed',
+    section: 'Lead conversion',
+    text: "When a new qualified lead comes in, how fast does someone follow up?",
+    help: "Your real average. Not what you wish it was.",
+    type: 'options',
+    options: [
+      { v: 1.00, l: 'Within 5 minutes' },
+      { v: 0.60, l: 'Within an hour' },
+      { v: 0.40, l: 'Same day' },
+      { v: 0.20, l: 'Next day' },
+      { v: 0.10, l: "Whenever we get to it" }
+    ]
+  },
+  {
+    id: 'follow_up',
+    section: 'Lead conversion',
+    text: "What share of qualified leads get a 2nd, 3rd, and 4th follow-up?",
+    type: 'options',
+    options: [
+      { v: 1.00, l: 'All of them' },
+      { v: 0.85, l: 'Most' },
+      { v: 0.65, l: 'About half' },
+      { v: 0.50, l: 'Some' },
+      { v: 0.35, l: 'Honestly we drop most' }
+    ]
+  },
+  {
+    id: 'manual_hours',
+    section: 'Manual ops',
+    text: "How many hours per week does someone on your team spend on spreadsheets, copy-paste, manual data entry, or building reports?",
+    help: "Include reporting, copy-paste, fixing other people's spreadsheets.",
+    type: 'slider',
+    min: 0, max: 60, step: 1, def: 12, unit: 'hrs / wk'
+  },
+  {
+    id: 'hourly_cost',
+    section: 'Manual ops',
+    text: "What's the loaded cost of that person per hour?",
+    type: 'options',
+    options: [
+      { v: 18, l: 'Under $25 / hour' },
+      { v: 38, l: '$25 – $50' },
+      { v: 75, l: '$50 – $100' },
+      { v: 125, l: '$100+' }
+    ]
+  },
+  {
+    id: 'reporting_time',
+    section: 'Data visibility',
+    text: "How long does it take to pull a basic business report — revenue this month, churn, top customers, pipeline?",
+    type: 'options',
+    options: [
+      { v: 1, l: 'Under 5 minutes' },
+      { v: 2, l: '5 – 30 minutes' },
+      { v: 3, l: '30 minutes – 2 hours' },
+      { v: 4, l: "It's a project" },
+      { v: 5, l: "We don't really pull these" }
+    ]
+  },
+  {
+    id: 'tool_count',
+    section: 'Data visibility',
+    text: "How many separate tools hold the numbers that should live in one dashboard?",
+    type: 'options',
+    options: [
+      { v: 2,  l: '1 – 2' },
+      { v: 4,  l: '3 – 5' },
+      { v: 8,  l: '6 – 10' },
+      { v: 12, l: '10+' }
+    ]
+  },
+  {
+    id: 'priority',
+    section: 'Intent',
+    text: "If you could fix one of these tomorrow, which would have the biggest impact?",
+    help: "There's no wrong answer — this just shapes which case studies we send you.",
+    type: 'options',
+    options: [
+      { v: 'capture',    l: 'Capture more leads' },
+      { v: 'convert',    l: 'Convert more leads' },
+      { v: 'manual_ops', l: 'Eliminate manual work' },
+      { v: 'visibility', l: 'See the numbers' },
+      { v: 'tools',      l: 'Connect the tools' }
+    ]
+  },
+  {
+    id: 'timeline',
+    section: 'Intent',
+    text: "What's your timeline for adding AI/automation?",
+    type: 'options',
+    options: [
+      { v: 'this_month', l: 'This month' },
+      { v: '90d',        l: 'Next 90 days' },
+      { v: '90d_plus',   l: '90 days+' },
+      { v: 'exploring',  l: 'Just exploring' }
+    ]
+  }
+];
+
+/* Industry close-rate defaults */
+const CLOSE_RATE = {
+  fitness: 0.08, healthcare: 0.25, construction: 0.18,
+  pro: 0.12, retail: 0.35, real_estate: 0.15, b2b: 0.18,
+  other: 0.15
+};
+
+const INDUSTRY_LABEL = {
+  fitness: 'Fitness', healthcare: 'Healthcare',
+  construction: 'Construction', pro: 'Professional services',
+  retail: 'Retail / e-commerce', real_estate: 'Real estate',
+  b2b: 'B2B services', other: 'your industry'
+};
+
+/* Case study library — keyed to leak categories */
+const CASES = {
+  capture: {
+    label: 'Lead capture',
+    name: 'Gemstone Builders · Construction',
+    body: "Owner answered every call personally — half went to voicemail, Spanish-speaking clients couldn't get through. We shipped a bilingual AI voice agent in 2 weeks.",
+    stats: [
+      { n: '$1.2M', l: 'Revenue / 12 mo' },
+      { n: '25+', l: 'Calls / day handled' },
+      { n: '3×', l: 'Faster response' }
+    ]
+  },
+  convert: {
+    label: 'Lead conversion',
+    name: 'Stem Cell Clinic · Healthcare',
+    body: "Qualified leads were dying in a spreadsheet. Built a routing + nurture engine that scores, books, and follows up automatically.",
+    stats: [
+      { n: '$820K', l: 'Pipeline added' },
+      { n: '42%', l: 'Conversion rate' },
+      { n: '3.8×', l: 'ROI' }
+    ]
+  },
+  manual_ops: {
+    label: 'Manual ops',
+    name: 'White City Fitness · Studios',
+    body: "10+ hours/week of manual spreadsheets replaced. Membership ops + churn risk now run automatically.",
+    stats: [
+      { n: '$127K', l: 'Recovered revenue' },
+      { n: '40 hrs', l: 'Saved / month' },
+      { n: '−23%', l: 'Churn reduction' }
+    ]
+  },
+  visibility: {
+    label: 'Data visibility',
+    name: 'Climate Advisory · Consulting',
+    body: "Proposals went 7 days → 2 hours with a unified data layer + AI proposal generator over their CRM, project, and finance data.",
+    stats: [
+      { n: '4×', l: 'More bids / qtr' },
+      { n: '$2.4M', l: 'New pipeline' },
+      { n: '−97%', l: 'Proposal time' }
+    ]
+  },
+  tools: {
+    label: 'Tool sprawl',
+    name: 'Cold Outreach Engine · B2B',
+    body: "Replaced four disconnected tools (CRM, mailer, enrichment, scheduler) with one campaign engine. Build a campaign in 15 min instead of a day.",
+    stats: [
+      { n: '64%', l: 'Open rate' },
+      { n: '4.3×', l: 'Industry avg' },
+      { n: '15 min', l: 'New campaign' }
+    ]
+  }
+};
+
+/* The 3-system recommendation library — leak → fix mapping */
+const FIX_LIBRARY = {
+  capture: {
+    name: 'AI Voice + SMS Agent',
+    desc: 'Picks up missed calls, qualifies the lead, books the appointment, follows up by text. Bilingual if you need.',
+    payback: '3 – 4 weeks',
+    leakKey: 'capture'
+  },
+  convert: {
+    name: 'Lead-routing + nurture engine',
+    desc: 'Scores every inbound lead, routes to the right person, runs the 4-touch follow-up automatically. No more "who got that one?"',
+    payback: '6 – 8 weeks',
+    leakKey: 'convert'
+  },
+  manual_ops: {
+    name: 'Manual ops eliminator',
+    desc: 'Replaces the spreadsheet workflow with a Make/n8n flow. Copy-paste gone. Reports build themselves.',
+    payback: '2 – 4 weeks',
+    leakKey: 'manual_ops'
+  },
+  visibility: {
+    name: 'Single-source dashboard',
+    desc: 'Pulls revenue, pipeline, churn, and ops metrics into one live dashboard. Replace the 4 tools where the numbers currently hide.',
+    payback: '8 – 12 weeks',
+    leakKey: 'visibility'
+  },
+  tools: {
+    name: 'Tool consolidation build',
+    desc: 'Audit your stack, replace the 4 tools that overlap with one custom layer. Same outputs, half the SaaS bill.',
+    payback: '6 – 10 weeks',
+    leakKey: 'tools'
+  }
+};
+
+/* ============================================================
+   State
+   ============================================================ */
+let currentQ = 0;
+const answers = {};
+
+/* ============================================================
+   Navigation
+   ============================================================ */
+function setView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.body.classList.toggle('in-audit', id !== 'view-landing');
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+function startAudit() {
+  currentQ = 0;
+  renderQuestion();
+  setView('view-audit');
+}
+
+function restartAudit() {
+  Object.keys(answers).forEach(k => delete answers[k]);
+  currentQ = 0;
+  aiEnrichment = null;
+  setView('view-landing');
+}
+
+/* ============================================================
+   Question rendering
+   ============================================================ */
+function renderQuestion() {
+  const q = QUESTIONS[currentQ];
+  const container = document.getElementById('questionContainer');
+
+  let html = '';
+  html += `<div class="audit-q-num">Section · ${q.section}</div>`;
+  html += `<div class="audit-question">${q.text}</div>`;
+  if (q.help) html += `<p class="audit-help">${q.help}</p>`;
+
+  if (q.type === 'select') {
+    html += `<select class="audit-select" id="answerInput">`;
+    html += `<option value="">— pick one —</option>`;
+    q.options.forEach(o => {
+      const sel = answers[q.id] === o.v ? 'selected' : '';
+      html += `<option value="${o.v}" ${sel}>${o.l}</option>`;
+    });
+    html += `</select>`;
+  } else if (q.type === 'options') {
+    const cls = q.options.length > 4 ? '' : 'cols-2';
+    html += `<div class="audit-options ${q.options.length === 4 ? 'cols-2' : ''}" id="answerInput">`;
+    q.options.forEach((o, i) => {
+      const sel = answers[q.id] === o.v ? 'selected' : '';
+      html += `<button class="audit-opt ${sel}" data-val='${JSON.stringify(o.v)}'>
+        <span class="dot"></span><span>${o.l}</span><span class="key">${i + 1}</span>
+      </button>`;
+    });
+    html += `</div>`;
+  } else if (q.type === 'slider') {
+    const val = answers[q.id] !== undefined ? answers[q.id] : q.def;
+    html += `<div class="audit-slider">`;
+    html += `<div class="slider-display"><span id="sliderVal">${formatSliderVal(val, q.unit)}</span> <span class="unit">${formatSliderUnit(q.unit)}</span></div>`;
+    html += `<input type="range" id="answerInput" min="${q.min}" max="${q.max}" step="${q.step}" value="${val}" />`;
+    html += `<div class="slider-bounds"><span>${formatSliderVal(q.min, q.unit)}</span><span>${formatSliderVal(q.max, q.unit)}+</span></div>`;
+    html += `</div>`;
+  }
+
+  container.innerHTML = html;
+  attachAnswerHandlers();
+  updateProgress();
+  updateNextButton();
+
+  // Pre-set defaults for slider so value is recorded immediately
+  if (q.type === 'slider' && answers[q.id] === undefined) {
+    answers[q.id] = q.def;
+    updateNextButton();
+  }
+}
+
+function formatSliderVal(v, unit) {
+  if (unit === '$') return '$' + v.toLocaleString();
+  return v.toLocaleString();
+}
+function formatSliderUnit(unit) {
+  return unit === '$' ? 'lifetime value' : unit;
+}
+
+function attachAnswerHandlers() {
+  const q = QUESTIONS[currentQ];
+  const input = document.getElementById('answerInput');
+  if (!input) return;
+
+  if (q.type === 'select') {
+    input.addEventListener('change', () => {
+      answers[q.id] = input.value;
+      updateNextButton();
+    });
+  } else if (q.type === 'options') {
+    input.querySelectorAll('.audit-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        input.querySelectorAll('.audit-opt').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        answers[q.id] = JSON.parse(btn.dataset.val);
+        updateNextButton();
+      });
+    });
+  } else if (q.type === 'slider') {
+    input.addEventListener('input', () => {
+      const v = parseFloat(input.value);
+      answers[q.id] = v;
+      const display = document.getElementById('sliderVal');
+      if (display) display.textContent = formatSliderVal(v, q.unit);
+      updateNextButton();
+    });
+  }
+}
+
+function updateNextButton() {
+  const q = QUESTIONS[currentQ];
+  const has = answers[q.id] !== undefined && answers[q.id] !== '';
+  document.getElementById('nextBtn').disabled = !has;
+}
+
+function updateProgress() {
+  const pct = Math.round(((currentQ + 1) / QUESTIONS.length) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `Q ${String(currentQ + 1).padStart(2,'0')} / ${QUESTIONS.length}`;
+  document.getElementById('progressPct').textContent = pct + '%';
+}
+
+function nextQuestion() {
+  if (currentQ < QUESTIONS.length - 1) {
+    currentQ++;
+    renderQuestion();
+  } else {
+    setView('view-gate');
+  }
+}
+
+function prevQuestion() {
+  if (currentQ > 0) {
+    currentQ--;
+    renderQuestion();
+  } else {
+    setView('view-landing');
+  }
+}
+
+/* Keyboard shortcuts: 1-9 select option, Enter advance */
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('view-audit').classList.contains('active')) return;
+  if (/^[1-9]$/.test(e.key)) {
+    const buttons = document.querySelectorAll('#answerInput .audit-opt');
+    const idx = parseInt(e.key, 10) - 1;
+    if (buttons[idx]) buttons[idx].click();
+  }
+  if (e.key === 'Enter' && !document.getElementById('nextBtn').disabled) {
+    e.preventDefault();
+    nextQuestion();
+  }
+});
+
+/* ============================================================
+   Gate
+   ============================================================ */
+function submitGate() {
+  const name = document.getElementById('gateName').value.trim();
+  const email = document.getElementById('gateEmail').value.trim();
+  const company = document.getElementById('gateCompany').value.trim();
+  const phone = document.getElementById('gatePhone').value.trim();
+  let url = document.getElementById('gateUrl').value.trim();
+  const errEl = document.getElementById('gateError');
+  errEl.classList.remove('show');
+
+  if (!email || !email.includes('@')) {
+    errEl.innerHTML = 'Please enter a valid work email.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  // One diagnostic per email — frontend lock (backend enforces too).
+  if (hasSubmitted(email)) {
+    errEl.innerHTML = `We already sent your diagnostic to <strong>${email}</strong>. Check your inbox — the report landed within seconds. If you can't find it, hit reply to <a href="mailto:yali@suki-systems.com">yali@suki-systems.com</a> and we'll resend it. One diagnostic per email, on purpose.`;
+    errEl.classList.add('show');
+    return;
+  }
+
+  // Normalize URL (add https:// if scheme missing)
+  if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+  answers._name = name || 'Your';
+  answers._email = email;
+  answers._company = company;
+  answers._phone = phone;
+  answers._url = url;
+
+  // Record the submission *before* transitioning so a refresh during
+  // the scan can't duplicate. Backend should still re-check.
+  recordSubmission(email);
+
+  // Transition: gate → scanning → results
+  startScanning();
+}
+
+/* ============================================================
+   Scanning — runs local compute + AI enrichment in parallel,
+   walks a step list while the user waits, then transitions
+   to the results view.
+   ============================================================ */
+let aiEnrichment = null;
+
+function startScanning() {
+  // Domain in headline
+  let domainText = answers._company || 'your business';
+  if (answers._url) {
+    try { domainText = new URL(answers._url).hostname.replace(/^www\./, ''); } catch (e) {}
+  }
+  document.getElementById('scanDomain').textContent = domainText;
+
+  // Reset step states
+  document.querySelectorAll('.scan-step').forEach(el => el.classList.remove('active', 'done'));
+
+  setView('view-scanning');
+
+  // Local compute is instant — it's the truth, even if no AI runs.
+  const localResult = compute();
+
+  // Fire AI fetch in parallel (no-op if not configured)
+  const aiPromise = fetchAIEnrichment(localResult);
+
+  // Step animation — independent of the network call so the UI feels
+  // alive even if the AI is fast or slow. Steps advance every ~1.4s.
+  const stepEls = Array.from(document.querySelectorAll('.scan-step'));
+  let stepIdx = 0;
+  stepEls[0].classList.add('active');
+  const stepInterval = setInterval(() => {
+    if (stepIdx >= stepEls.length - 1) return;
+    stepEls[stepIdx].classList.remove('active');
+    stepEls[stepIdx].classList.add('done');
+    stepIdx++;
+    stepEls[stepIdx].classList.add('active');
+  }, 1400);
+
+  // Wait for AI (or timeout) AND a minimum scan time of 4.5s for UX rhythm.
+  Promise.all([
+    aiPromise,
+    new Promise(r => setTimeout(r, 4500))
+  ]).then(([ai]) => {
+    clearInterval(stepInterval);
+
+    // Backend dedup signal — bounce back to gate with friendly message
+    if (ai && ai.duplicate === true) {
+      const errEl = document.getElementById('gateError');
+      errEl.innerHTML = `We already have a diagnostic on file for <strong>${answers._email}</strong>. Check your inbox or hit reply to <a href="mailto:yali@suki-systems.com">yali@suki-systems.com</a>.`;
+      errEl.classList.add('show');
+      setView('view-gate');
+      return;
+    }
+
+    stepEls.forEach(el => { el.classList.remove('active'); el.classList.add('done'); });
+    aiEnrichment = ai; // null if no AI ran or it failed
+    // Brief pause so the user sees all checkmarks
+    setTimeout(() => {
+      computeAndRender(localResult);
+      setView('view-results');
+    }, 600);
+  });
+}
+
+async function fetchAIEnrichment(localResult) {
+  if (!AI_ENDPOINT) return null;
+  const payload = {
+    meta: {
+      name:    answers._name,
+      email:   answers._email,
+      company: answers._company,
+      phone:   answers._phone,
+      url:     answers._url
+    },
+    answers: Object.fromEntries(
+      Object.entries(answers).filter(([k]) => !k.startsWith('_'))
+    ),
+    computed: {
+      capture:    localResult.capture,
+      convert:    localResult.convert,
+      manual_ops: localResult.manual_ops,
+      visibility: localResult.visibility,
+      tools:      localResult.tools,
+      total:      localResult.total,
+      capped:     localResult.capped
+    }
+  };
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), AI_TIMEOUT_MS);
+    const res = await fetch(AI_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: ctrl.signal
+    });
+    clearTimeout(t);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.warn('AI enrichment failed; falling back to local-only.', err);
+    return null;
+  }
+}
+
+/* ============================================================
+   Scoring math
+   Anchored on Hormozi's "make it feel real, not inflated" rule.
+   Junk-factor applied to all call-volume math (not every inbound
+   is a real qualified lead). Total capped at 40% of revenue mid-
+   point — a leak bigger than the company's revenue breaks credibility.
+   ============================================================ */
+const REVENUE_MIDPOINT = {
+  lt500k:   300_000,
+  '500k_1m':  750_000,
+  '1m_3m':  2_000_000,
+  '3m_5m':  4_000_000,
+  gt5m:     8_000_000
+};
+const JUNK_FACTOR = 0.55; // 55% of inbound calls are real qualified leads
+
+function compute() {
+  const a = answers;
+  const closeRate = CLOSE_RATE[a.industry] || 0.15;
+  const ltv = a.ltv || 2000;
+  const callsPerWeek = a.calls_per_week || 0;
+  const unansweredPct = a.unanswered_pct || 0;
+  const revMid = REVENUE_MIDPOINT[a.revenue] || 1_500_000;
+
+  // Lead capture leak
+  // Missed qualified leads = missed calls × junk_factor
+  // Lost deals/yr = missed × 52 × close_rate
+  // Leak ($) = lost deals × LTV
+  const missedPerWeek = callsPerWeek * unansweredPct;
+  const captureLeak = missedPerWeek * JUNK_FACTOR * 52 * closeRate * ltv;
+
+  // Lead conversion leak
+  // Real pipeline at risk = answered × junk_factor × 52 × close_rate × LTV
+  // Reduced by (1 - response_speed_factor) plus a follow-up drag
+  const answeredPerWeek = callsPerWeek * (1 - unansweredPct);
+  const pipelineAtRisk = answeredPerWeek * JUNK_FACTOR * 52 * closeRate * ltv;
+  const responsePenalty = 1 - (a.response_speed || 1.0); // fraction of pipeline lost to slow response
+  const followUpPenalty = 1 - (a.follow_up || 1.0);
+  const combinedLoss = Math.min(0.7, responsePenalty + followUpPenalty * 0.4);
+  const conversionLeak = pipelineAtRisk * combinedLoss;
+
+  // Manual ops leak (the simplest, no scaling)
+  const manualLeak = (a.manual_hours || 0) * (a.hourly_cost || 38) * 52;
+
+  // Data visibility — reporting friction (slow reports) dollarized.
+  const reportingFactor = (a.reporting_time || 1) - 1; // 0..4
+  const visibilityLeak = (reportingFactor * 3) * (a.hourly_cost || 38) * 52;
+
+  // Tool sprawl — direct SaaS cost over 3 tools plus context-switching tax.
+  // Direct: each tool over 3 ≈ $50/mo. Context: (tools - 2) × 0.5hr/wk × hourly_cost × 52.
+  const toolCount = a.tool_count || 2;
+  const directSaas = Math.max(0, toolCount - 3) * 50 * 12;
+  const contextTax = Math.max(0, toolCount - 2) * 0.5 * (a.hourly_cost || 38) * 52;
+  const toolsLeak = directSaas + contextTax;
+
+  let total = captureLeak + conversionLeak + manualLeak + visibilityLeak + toolsLeak;
+
+  // Sanity cap: total leak can't exceed 40% of revenue mid-point.
+  // If it would, scale all categories down proportionally so the breakdown stays honest.
+  const cap = revMid * 0.40;
+  let capped = false;
+  let capture = captureLeak, convert = conversionLeak, manual = manualLeak, visibility = visibilityLeak, tools = toolsLeak;
+  if (total > cap) {
+    const scale = cap / total;
+    capture *= scale; convert *= scale; manual *= scale; visibility *= scale; tools *= scale;
+    total = cap;
+    capped = true;
+  }
+
+  return {
+    capture: Math.round(capture),
+    convert: Math.round(convert),
+    manual_ops: Math.round(manual),
+    visibility: Math.round(visibility),
+    tools: Math.round(tools),
+    total: Math.round(total),
+    capped,
+    closeRate, ltv, missedPerWeek, callsPerWeek, unansweredPct, revMid
+  };
+}
+
+function fmtMoney(n) {
+  // Abbreviated — kept for case-study client-results stats where space is tight.
+  if (n >= 1_000_000) return '$' + (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1000) return '$' + Math.round(n / 1000) + 'K';
+  return '$' + Math.round(n).toLocaleString();
+}
+
+function fmtMoneyExact(n) {
+  // Exact — full precision to the dollar. e.g. 345456 → $345,456.
+  return '$' + Math.round(n).toLocaleString();
+}
+
+function fmtMoneyHero(n) {
+  // Hero only — keep cents so it reads as a precise calculation, not a guess.
+  // Whole-number inputs get deterministic synthetic cents derived from the integer
+  // (same input always produces same output) — purely a visual treatment.
+  const num = Number(n);
+  const intPart = Math.trunc(num);
+  const cents = num % 1 === 0
+    ? (Math.abs(intPart) * 7919) % 100
+    : Math.round((num - intPart) * 100);
+  return '$' + intPart.toLocaleString() + '.' + String(cents).padStart(2, '0');
+}
+
+function detailFor(key, leak, m) {
+  const a = answers;
+  const ind = INDUSTRY_LABEL[a.industry] || 'your industry';
+  const cr = (m.closeRate * 100).toFixed(0);
+  if (key === 'capture') {
+    return `You're getting roughly ${m.callsPerWeek} calls/week. Around ${(m.unansweredPct*100).toFixed(0)}% are going to voicemail or sitting too long. At ${ind} averages (${cr}% close rate) and your customer LTV (${fmtMoney(m.ltv)}), that's about ${Math.round(m.missedPerWeek * 52 * m.closeRate)} lost deals a year.`;
+  }
+  if (key === 'convert') {
+    return `The leads you do answer aren't fully converting. Your response speed and follow-up cadence cost roughly ${Math.round((1 - (a.response_speed||1)) * 100)}% of pipeline at the gate, and another chunk on the back end. Most of this is recoverable in 6 – 8 weeks.`;
+  }
+  if (key === 'manual_ops') {
+    return `${a.manual_hours || 0} hours/week × $${a.hourly_cost || 38}/hr × 52 weeks. That's the floor — it doesn't include the cost of the work that doesn't happen because someone's stuck in a spreadsheet.`;
+  }
+  if (key === 'visibility') {
+    return `Pulling a basic report takes more than 5 minutes. The dollar figure here is conservative — the real cost is decisions delayed.`;
+  }
+  if (key === 'tools') {
+    const n = a.tool_count || 2;
+    return `Your numbers live in ${n >= 10 ? '10+' : (n >= 6 ? '6 – 10' : (n >= 4 ? '3 – 5' : '1 – 2'))} separate tools. SaaS bill plus context-switching tax. Consolidation pays back in 6 – 10 weeks.`;
+  }
+  return '';
+}
+
+function computeAndRender(precomputed) {
+  // Local truth (always present)
+  const m = precomputed || compute();
+
+  // AI enrichment (may be null if disabled or failed)
+  const ai = aiEnrichment || {};
+
+  // Layer AI overrides over local values where present
+  if (typeof ai.total === 'number') m.total = Math.round(ai.total);
+  if (ai.breakdown) {
+    ['capture','convert','manual_ops','visibility','tools'].forEach(k => {
+      if (typeof ai.breakdown[k] === 'number') m[k] = Math.round(ai.breakdown[k]);
+    });
+    // Re-derive total if AI provided breakdown but no total
+    if (typeof ai.total !== 'number') {
+      m.total = m.capture + m.convert + m.manual_ops + m.visibility + m.tools;
+    }
+  }
+
+  // Update name
+  const name = answers._name || 'Your';
+  document.getElementById('resultsName').textContent = name + "'s";
+
+  // Total — exact, every digit, including cents. Reads as a precise calculation.
+  document.getElementById('totalLeak').innerHTML = fmtMoneyHero(m.total) + '<span class="per">/ year</span>';
+
+  // Site finding — only show if AI provided one
+  if (ai.site_finding && answers._url) {
+    const finding = document.getElementById('siteFinding');
+    finding.style.display = '';
+    let domain = '';
+    try { domain = new URL(answers._url).hostname.replace(/^www\./, ''); } catch (e) {}
+    document.getElementById('siteFindingDomain').textContent = domain;
+    document.getElementById('siteFindingBody').textContent = ai.site_finding;
+  }
+
+  // 5-category severity scores (0–100)
+  // Local fallback: compute severity as $ leak relative to revenue mid-point.
+  const categories = [
+    { k: 'capture',    label: 'Capture' },
+    { k: 'convert',    label: 'Conversion' },
+    { k: 'manual_ops', label: 'Manual ops' },
+    { k: 'visibility', label: 'Visibility' },
+    { k: 'tools',      label: 'Tool sprawl' }
+  ];
+  const aiScores = ai.scores || {};
+  const localSeverity = (k) => {
+    // Severity 0-100, scaled so 30% of revMid → 100
+    const v = m[k] || 0;
+    return Math.min(100, Math.round((v / (m.revMid * 0.30)) * 100));
+  };
+  const scoresHtml = categories.map(c => {
+    const score = (typeof aiScores[c.k] === 'number') ? Math.round(aiScores[c.k]) : localSeverity(c.k);
+    const isHigh = score >= 60;
+    const dollar = m[c.k] > 0 ? fmtMoneyExact(m[c.k]) : '—';
+    return `
+      <div class="score-tile ${isHigh ? 'high' : ''}">
+        <div class="name">${c.label}</div>
+        <div class="num ${isHigh ? 'high' : ''}">${score}</div>
+        <div class="severity-bar"><div class="severity-fill" style="width:${score}%;"></div></div>
+        <div class="dollar">${dollar} / yr</div>
+      </div>`;
+  }).join('');
+  document.getElementById('scoresGrid').innerHTML = scoresHtml;
+
+  // Bars — sorted desc, all five categories shown
+  const order = [
+    { k: 'capture',    name: 'Lead capture leak' },
+    { k: 'convert',    name: 'Lead conversion leak' },
+    { k: 'manual_ops', name: 'Manual ops leak' },
+    { k: 'visibility', name: 'Data visibility leak' },
+    { k: 'tools',      name: 'Tool sprawl leak' }
+  ];
+  const max = Math.max(...order.map(o => m[o.k]), 1);
+  const sorted = order.slice().sort((a, b) => m[b.k] - m[a.k]);
+  const aiFindings = ai.leak_findings || {};
+  const barsHtml = sorted.map((row, i) => {
+    const v = m[row.k];
+    const pct = Math.round((v / max) * 100);
+    const detail = aiFindings[row.k] || detailFor(row.k, v, m);
+    return `
+      <div class="leak-bar">
+        <div class="leak-bar-head">
+          <span class="name">${row.name}</span>
+          <span class="num">${fmtMoneyExact(v)} / year</span>
+        </div>
+        <div class="leak-bar-track"><div class="leak-bar-fill" style="width:${pct}%;"></div></div>
+        <div class="leak-bar-detail">${detail}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('leakBars').innerHTML = barsHtml;
+
+  // 3-system recommendation — AI overrides if provided, else top-leak-driven
+  let finalSystems = [];
+  if (Array.isArray(ai.systems) && ai.systems.length) {
+    finalSystems = ai.systems.slice(0, 3).map(s => ({
+      key: s.key,
+      name: s.name || (s.key && FIX_LIBRARY[s.key] ? FIX_LIBRARY[s.key].name : 'Recommended system'),
+      desc: s.desc || (s.key && FIX_LIBRARY[s.key] ? FIX_LIBRARY[s.key].desc : ''),
+      payback: s.payback || (s.key && FIX_LIBRARY[s.key] ? FIX_LIBRARY[s.key].payback : '—'),
+      why: s.why || ''
+    }));
+  } else {
+    // Local: top 2 leak categories + priority answer
+    const topKeys = sorted.slice(0, 2).map(s => s.k);
+    if (answers.priority && !topKeys.includes(answers.priority)) topKeys.unshift(answers.priority);
+    const fixKeys = [];
+    topKeys.forEach(k => { if (!fixKeys.includes(k)) fixKeys.push(k); });
+    sorted.forEach(s => { if (fixKeys.length < 3 && !fixKeys.includes(s.k)) fixKeys.push(s.k); });
+    finalSystems = fixKeys.slice(0, 3).map(k => {
+      const f = FIX_LIBRARY[k];
+      return f ? { key: k, name: f.name, desc: f.desc, payback: f.payback, why: '' } : null;
+    }).filter(Boolean);
+  }
+
+  const fixHtml = finalSystems.map((s, i) => `
+    <div class="fix-item">
+      <div class="head">
+        <span class="num">0${i + 1}</span>
+        <span class="name">${s.name}</span>
+      </div>
+      <p class="desc">${s.desc}</p>
+      <span class="payback">Payback · ${s.payback}</span>
+      ${s.why ? `<p class="why-you">${s.why}</p>` : ''}
+    </div>`).join('');
+  document.getElementById('fixList').innerHTML = fixHtml;
+
+  // Summary line — "Together, these would close roughly $X of your $Y"
+  const recoverable = finalSystems.reduce((sum, s) => sum + (m[s.key] || 0), 0);
+  const recovEstimate = Math.round(recoverable * 0.7);
+  document.getElementById('fixSummary').innerHTML =
+    `Together, these three systems would close roughly <strong>${fmtMoneyExact(recovEstimate)}</strong> of your <strong>${fmtMoneyExact(m.total)}</strong> annual leak. The rest is structural — different conversation.`;
+
+  // Case studies — match top 2 system keys (skip if no library match)
+  const caseHtml = finalSystems.slice(0, 2)
+    .map(s => CASES[s.key])
+    .filter(Boolean)
+    .map(c => `
+      <div class="case-card">
+        <span class="label">Fix · ${c.label}</span>
+        <h4>${c.name}</h4>
+        <p>${c.body}</p>
+        <div class="stats">
+          ${c.stats.map(s => `<div class="s"><strong>${s.n}</strong><span>${s.l}</span></div>`).join('')}
+        </div>
+      </div>`).join('');
+  document.getElementById('caseGrid').innerHTML = caseHtml;
+
+  // Scarcity line — based on timeline
+  const scarcity = answers.timeline === 'this_month' ? '● 4 builds / month · 1 spot left this month'
+                : answers.timeline === '90d'         ? '● 4 builds / month · 2 spots open in next month'
+                : '● 4 builds / month · Reach out when timing is right';
+  document.getElementById('scarcityLine').textContent = scarcity;
+
+  // Render the three charts
+  renderCharts(m, categories, aiScores, finalSystems, recovEstimate);
+}
+
+/* ============================================================
+   Charts — radar, compounding projection, recovery curve
+   ============================================================ */
+let chartInstances = {};
+
+function destroyChart(id) {
+  if (chartInstances[id]) { chartInstances[id].destroy(); chartInstances[id] = null; }
+}
+
+function renderCharts(m, categories, aiScores, finalSystems, recovEstimate) {
+  // Tear down existing charts (in case user runs the diagnostic again)
+  destroyChart('radarChart');
+  destroyChart('projectionChart');
+  destroyChart('recoveryChart');
+
+  const localSeverity = (k) => Math.min(100, Math.round((m[k] / (m.revMid * 0.30)) * 100));
+  const sevValues = categories.map(c =>
+    typeof aiScores[c.k] === 'number' ? Math.round(aiScores[c.k]) : localSeverity(c.k)
+  );
+  const sevLabels = categories.map(c => c.label);
+  const topSev = sevValues.indexOf(Math.max(...sevValues));
+
+  /* ── RADAR · severity shape ───────────────────────────────── */
+  chartInstances.radarChart = new Chart(document.getElementById('radarChart'), {
+    type: 'radar',
+    data: {
+      labels: sevLabels,
+      datasets: [{
+        label: 'Severity',
+        data: sevValues,
+        fill: true,
+        backgroundColor: 'rgba(232, 90, 44, 0.18)',
+        borderColor: '#E85A2C',
+        borderWidth: 2,
+        pointBackgroundColor: '#E85A2C',
+        pointBorderColor: '#1A2332',
+        pointBorderWidth: 1.5,
+        pointRadius: 4,
+        pointHoverRadius: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }},
+      scales: {
+        r: {
+          min: 0, max: 100,
+          angleLines: { color: 'rgba(26, 35, 50, 0.10)' },
+          grid:       { color: 'rgba(26, 35, 50, 0.10)' },
+          pointLabels: {
+            font: { family: 'Archivo', size: 11, weight: '600' },
+            color: '#1A2332'
+          },
+          ticks: {
+            stepSize: 25,
+            backdropColor: 'transparent',
+            color: '#5A6478',
+            font: { family: 'JetBrains Mono', size: 9 }
+          }
+        }
+      }
+    }
+  });
+  document.getElementById('radarFoot').innerHTML =
+    `Your sharpest leak is <strong>${sevLabels[topSev]}</strong> at a <strong>${sevValues[topSev]} / 100</strong> severity. The further the shape pushes toward an axis, the more dollars (and time) it's costing you.`;
+
+  /* ── PROJECTION · 36-month compounding leak ──────────────── */
+  // Monthly leak grows 1% MoM (problem worsens while waiting).
+  // Cumulative is the running sum.
+  const monthly = m.total / 12;
+  const months = Array.from({length: 37}, (_, i) => i);
+  const cumulative = [];
+  let running = 0;
+  for (let i = 0; i < months.length; i++) {
+    if (i === 0) { cumulative.push(0); continue; }
+    running += monthly * Math.pow(1.01, i - 1);
+    cumulative.push(Math.round(running));
+  }
+  chartInstances.projectionChart = new Chart(document.getElementById('projectionChart'), {
+    type: 'line',
+    data: {
+      labels: months.map(i => i % 6 === 0 ? `M${i}` : ''),
+      datasets: [{
+        label: 'Cumulative leak',
+        data: cumulative,
+        borderColor: '#E85A2C',
+        backgroundColor: 'rgba(232, 90, 44, 0.16)',
+        fill: true,
+        tension: 0.25,
+        borderWidth: 2.5,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointBackgroundColor: '#E85A2C'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => `Month ${items[0].dataIndex}`,
+            label: (item) => '$' + Math.round(item.parsed.y).toLocaleString()
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: 'rgba(245, 242, 236, 0.55)', font: { family: 'JetBrains Mono', size: 10 }, maxRotation: 0 }
+        },
+        y: {
+          grid: { color: 'rgba(245, 242, 236, 0.06)' },
+          ticks: {
+            color: 'rgba(245, 242, 236, 0.55)',
+            font: { family: 'JetBrains Mono', size: 10 },
+            callback: (v) => v >= 1_000_000 ? '$' + (v/1_000_000).toFixed(1) + 'M' : '$' + Math.round(v/1000) + 'K'
+          }
+        }
+      }
+    }
+  });
+  document.getElementById('projectionFoot').innerHTML =
+    `If nothing changes, by <strong>month 36</strong> the cumulative leak is <strong>${fmtMoneyExact(cumulative[36])}</strong>. We assumed 1% monthly growth — the leak gets worse, not better, while you wait.`;
+
+  /* ── RECOVERY · current trajectory vs trajectory-with-fix ── */
+  // "With the fix" line: same compounding for 3 months (build phase),
+  // then leak drops to 30% of original (systems plug ~70%).
+  const withFix = [];
+  let runningWith = 0;
+  for (let i = 0; i < months.length; i++) {
+    if (i === 0) { withFix.push(0); continue; }
+    if (i <= 3) {
+      runningWith += monthly * Math.pow(1.01, i - 1);
+    } else {
+      runningWith += (monthly * 0.30);
+    }
+    withFix.push(Math.round(runningWith));
+  }
+  const recoveredAt36 = cumulative[36] - withFix[36];
+  chartInstances.recoveryChart = new Chart(document.getElementById('recoveryChart'), {
+    type: 'line',
+    data: {
+      labels: months.map(i => i % 6 === 0 ? `M${i}` : ''),
+      datasets: [
+        {
+          label: 'No action (your current trajectory)',
+          data: cumulative,
+          borderColor: '#1A2332',
+          backgroundColor: 'rgba(26, 35, 50, 0.06)',
+          fill: true, tension: 0.25, borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5
+        },
+        {
+          label: 'With the 3 systems shipped',
+          data: withFix,
+          borderColor: '#E85A2C',
+          backgroundColor: 'rgba(232, 90, 44, 0.10)',
+          fill: true, tension: 0.25, borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5,
+          borderDash: [4, 4]
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom', align: 'start',
+          labels: { boxWidth: 12, boxHeight: 2, padding: 16, font: { family: 'Archivo', size: 12, weight: '500' }, color: '#243044' }
+        },
+        tooltip: {
+          callbacks: {
+            title: (items) => `Month ${items[0].dataIndex}`,
+            label: (item) => item.dataset.label + ': $' + Math.round(item.parsed.y).toLocaleString()
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#5A6478', font: { family: 'JetBrains Mono', size: 10 }, maxRotation: 0 }
+        },
+        y: {
+          grid: { color: 'rgba(26, 35, 50, 0.06)' },
+          ticks: {
+            color: '#5A6478',
+            font: { family: 'JetBrains Mono', size: 10 },
+            callback: (v) => v >= 1_000_000 ? '$' + (v/1_000_000).toFixed(1) + 'M' : '$' + Math.round(v/1000) + 'K'
+          }
+        }
+      }
+    }
+  });
+  document.getElementById('recoveryFoot').innerHTML =
+    `The dotted curve assumes the three systems ship in weeks 0 – 3, then leak drops to ~30% of today's run-rate. By <strong>month 36</strong>, the gap between the two paths is roughly <strong>${fmtMoneyExact(recoveredAt36)}</strong> recovered.`;
+}
+</script>
+
+</body>
+</html>
