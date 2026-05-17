@@ -897,6 +897,16 @@ src="https://www.facebook.com/tr?id=1443546801139010&ev=PageView&noscript=1"
 /></noscript>
 <!-- End Meta Pixel Code -->
 
+<!-- Suki first-party analytics — cross-origin beacon to the Vercel app. -->
+<script>window.SUKI_TRACK_ENDPOINT = 'https://suki-system-site-analytics.vercel.app/api/track';</script>
+<script defer src="https://suki-system-site-analytics.vercel.app/analytics.js"></script>
+<script>
+  // Safe no-op until analytics.js loads.
+  window.suki = function (name, props) {
+    if (typeof window.sukiTrack === 'function') window.sukiTrack(name, props);
+  };
+</script>
+
 <!-- Meta Pixel — Lead event on cal.com clicks -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -1629,6 +1639,7 @@ function setView(id) {
   document.getElementById(id).classList.add('active');
   document.body.classList.toggle('in-audit', id !== 'view-landing');
   window.scrollTo({ top: 0, behavior: 'instant' });
+  if (window.suki) window.suki('diagnostic_view', { view: id });
 }
 
 function startAudit() {
@@ -1747,6 +1758,14 @@ function updateProgress() {
 }
 
 function nextQuestion() {
+  if (window.suki) {
+    var q = QUESTIONS[currentQ];
+    window.suki('diagnostic_question_answered', {
+      q_index: currentQ + 1,
+      q_id: q && q.id,
+      q_total: QUESTIONS.length,
+    });
+  }
   if (currentQ < QUESTIONS.length - 1) {
     currentQ++;
     renderQuestion();
@@ -1789,10 +1808,12 @@ function submitGate() {
   let url = document.getElementById('gateUrl').value.trim();
   const errEl = document.getElementById('gateError');
   errEl.classList.remove('show');
+  if (window.suki) window.suki('diagnostic_gate_submit_attempt');
 
   if (!email || !email.includes('@')) {
     errEl.innerHTML = 'Please enter a valid work email.';
     errEl.classList.add('show');
+    if (window.suki) window.suki('diagnostic_gate_submit_error', { reason: 'invalid_email' });
     return;
   }
 
@@ -1800,6 +1821,7 @@ function submitGate() {
   if (hasSubmitted(email)) {
     errEl.innerHTML = `We already sent your diagnostic to <strong>${email}</strong>. Check your inbox — the report landed within seconds. If you can't find it, hit reply to <a href="mailto:yali@suki-systems.com">yali@suki-systems.com</a> and we'll resend it. One diagnostic per email, on purpose.`;
     errEl.classList.add('show');
+    if (window.suki) window.suki('diagnostic_gate_submit_error', { reason: 'duplicate_email' });
     return;
   }
 
@@ -1815,6 +1837,7 @@ function submitGate() {
   // Record the submission *before* transitioning so a refresh during
   // the scan can't duplicate. Backend should still re-check.
   recordSubmission(email);
+  if (window.suki) window.suki('diagnostic_gate_submit_success', { has_phone: !!phone, has_url: !!url });
 
   // Transition: gate → scanning → results
   startScanning();
@@ -1877,6 +1900,7 @@ function startScanning() {
 
     stepEls.forEach(el => { el.classList.remove('active'); el.classList.add('done'); });
     aiEnrichment = ai; // null if no AI ran or it failed
+    if (window.suki) window.suki('diagnostic_scan_complete', { ai_enriched: !!ai });
     // Brief pause so the user sees all checkmarks
     setTimeout(() => {
       computeAndRender(localResult);
