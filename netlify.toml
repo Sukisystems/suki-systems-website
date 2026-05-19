@@ -1,0 +1,6 @@
+[build]
+  command = "node scripts/fetch-reviews.js"
+  publish = "."
+
+[build.environment]
+  NODE_VERSION = "20"

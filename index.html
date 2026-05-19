@@ -658,8 +658,48 @@
     .reviews-wrap > div {
       min-height: 200px;
     }
+    .reviews-header {
+      max-width: 1100px;
+      margin: 20px auto 0;
+      padding: 0 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .reviews-title { font-size: clamp(28px, 4vw, 44px); font-weight: 500; letter-spacing: -0.02em; margin: 0; }
+    .reviews-summary { display: flex; align-items: center; gap: 10px; color: var(--ink-soft); font-size: 14px; }
+    .reviews-summary .stars { color: var(--signal); letter-spacing: 1px; font-size: 16px; }
+    .reviews-summary a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+    .reviews-grid {
+      max-width: 1100px;
+      margin: 32px auto 0;
+      padding: 0 40px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .review-card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .review-head { display: flex; align-items: center; gap: 12px; }
+    .review-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--paper-soft); object-fit: cover; }
+    .review-author { font-weight: 600; font-size: 14px; }
+    .review-when { font-size: 12px; color: var(--ink-soft); }
+    .review-stars { color: var(--signal); letter-spacing: 2px; font-size: 14px; }
+    .review-text { font-size: 14px; line-height: 1.55; color: var(--ink); margin: 0; }
+    .review-google { margin-top: auto; font-size: 11px; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; }
+    .reviews-empty { max-width: 1100px; margin: 32px auto 0; padding: 0 40px; color: var(--ink-soft); font-size: 14px; }
     @media (max-width: 768px) {
       .reviews-wrap { padding: 0 20px; }
+      .reviews-header, .reviews-grid { padding: 0 20px; }
     }
 
     /* ── Contact ───────────────────────────────────────── */
@@ -924,30 +964,27 @@
     </div>
   </section>
 
-  <!--
-    ══ REVIEWS (DISABLED 2026-05-19) ═══════════════════════
-    Trustindex widget temporarily removed because Google
-    removed several reviews and the widget renders empty /
-    broken. See TRUSTINDEX_CORS_ISSUE.md for the separate
-    CORS regression context. To restore: un-comment the
-    section below AND renumber section labels back
-    (01 Proven results → 02, 02 About → 03, 03 Process → 04,
-     04 Team → 05, 05 Get started → 06).
-
+  <!-- ══ REVIEWS (Google Places, build-time) ════════════════ -->
   <section class="reviews" id="reviews">
     <div class="page">
       <div class="section-label reveal"><span class="num">01</span> What clients say</div>
     </div>
-    <div class="reviews-wrap reveal rd2">
-      <script defer async src="https://cdn.trustindex.io/loader.js?005ca16713968743b79629dff8b"></script>
+    <div class="reviews-header reveal rd1">
+      <h2 class="reviews-title">Real words from real clients.</h2>
+      <div class="reviews-summary" id="reviews-summary" hidden>
+        <span class="stars" id="reviews-stars"></span>
+        <span id="reviews-rating-text"></span>
+        <a id="reviews-link" target="_blank" rel="noopener">See all on Google →</a>
+      </div>
     </div>
+    <div class="reviews-grid reveal rd2" id="reviews-grid" aria-live="polite"></div>
+    <p class="reviews-empty" id="reviews-empty" hidden>Reviews are temporarily unavailable.</p>
   </section>
-  -->
 
   <!-- ══ CASE STUDIES ══════════════════════════════════════ -->
   <section class="cases" id="results">
     <div class="cases-header">
-      <div class="section-label reveal"><span class="num">01</span> Proven results</div>
+      <div class="section-label reveal"><span class="num">02</span> Proven results</div>
       <h2 class="section-title reveal rd1">Systems That Actually Ship.</h2>
       <p class="section-lede reveal rd2">Every system below is live. Here's what each client was dealing with before — and what runs now.</p>
     </div>
@@ -1143,7 +1180,7 @@
   <section class="intro" id="about">
     <div class="intro-grid">
       <div class="reveal">
-        <div class="section-label"><span class="num">02</span> About Suki Systems</div>
+        <div class="section-label"><span class="num">03</span> About Suki Systems</div>
         <h2 class="section-title">AI, Data &amp; Advisory shipped end-to-end.</h2>
         <div class="intro-body">
           <p>We design and deploy production AI systems for SMBs and startups — voice agents, lead qualification pipelines, and automation engines that answer calls, book meetings, and run ops 24/7.</p>
@@ -1213,7 +1250,7 @@
   <!-- ══ HOW WE WORK ══════════════════════════════════════ -->
   <section class="hww" id="services">
     <div class="page">
-      <div class="section-label reveal"><span class="num">03</span> Our process</div>
+      <div class="section-label reveal"><span class="num">04</span> Our process</div>
       <h2 class="section-title reveal rd1">Four steps. Two weeks.</h2>
       <p class="section-lede reveal rd2">Every engagement follows the same path. Average time from kickoff to live system: 2 weeks.</p>
       <div class="hww-track" data-track>
@@ -1255,7 +1292,7 @@
   <!-- ══ TEAM ═══════════════════════════════════════════════ -->
   <section class="team" id="team">
     <div class="page">
-      <div class="section-label reveal"><span class="num">04</span> Team</div>
+      <div class="section-label reveal"><span class="num">05</span> Team</div>
       <h2 class="section-title reveal rd1">Who builds your systems.</h2>
     </div>
     <div class="team-grid">
@@ -1316,7 +1353,7 @@
   <!-- ══ CONTACT ═══════════════════════════════════════════ -->
   <section class="contact" id="contact">
     <div class="page">
-      <div class="section-label reveal"><span class="num">05</span> Get started</div>
+      <div class="section-label reveal"><span class="num">06</span> Get started</div>
       <h2 class="section-title reveal rd1">Tell us what's eating your time.</h2>
       <p class="section-lede reveal rd2">Describe the manual process. We'll reply within 24 hours with a specific plan and cost estimate — no obligation.</p>
 
@@ -1518,6 +1555,63 @@
         }
       });
     });
+  </script>
+
+  <script>
+    // ── Google Reviews (data fetched at build time → reviews.json) ──
+    (function () {
+      var grid = document.getElementById('reviews-grid');
+      var empty = document.getElementById('reviews-empty');
+      var summary = document.getElementById('reviews-summary');
+      if (!grid) return;
+
+      function star(filled) { return filled ? '★' : '☆'; }
+      function stars(n) {
+        n = Math.round(n || 0);
+        var s = ''; for (var i = 1; i <= 5; i++) s += star(i <= n);
+        return s;
+      }
+      function esc(str) {
+        return String(str || '').replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+
+      fetch('reviews.json?v=' + Date.now())
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+        .then(function (data) {
+          var reviews = (data && data.reviews) || [];
+          if (!reviews.length) { empty.hidden = false; return; }
+
+          if (data.rating && data.total) {
+            document.getElementById('reviews-stars').textContent = stars(data.rating);
+            document.getElementById('reviews-rating-text').textContent =
+              data.rating.toFixed(1) + ' on Google · ' + data.total + ' review' + (data.total === 1 ? '' : 's');
+            if (data.url) document.getElementById('reviews-link').href = data.url;
+            summary.hidden = false;
+          }
+
+          grid.innerHTML = reviews.map(function (r) {
+            var avatar = r.profile_photo_url
+              ? '<img class="review-avatar" src="' + esc(r.profile_photo_url) + '" alt="" loading="lazy" referrerpolicy="no-referrer">'
+              : '<div class="review-avatar"></div>';
+            return ''
+              + '<article class="review-card">'
+              +   '<div class="review-head">'
+              +     avatar
+              +     '<div>'
+              +       '<div class="review-author">' + esc(r.author_name) + '</div>'
+              +       '<div class="review-when">' + esc(r.relative_time_description || '') + '</div>'
+              +     '</div>'
+              +   '</div>'
+              +   '<div class="review-stars" aria-label="' + r.rating + ' out of 5">' + stars(r.rating) + '</div>'
+              +   '<p class="review-text">' + esc(r.text) + '</p>'
+              +   '<div class="review-google">via Google</div>'
+              + '</article>';
+          }).join('');
+        })
+        .catch(function () { empty.hidden = false; });
+    })();
   </script>
 </body>
 </html>
