@@ -18,18 +18,30 @@ const path = require('path');
 
 const KEY = process.env.GOOGLE_PLACES_API_KEY;
 const QUERY = process.env.GOOGLE_PLACES_QUERY || 'Suki systems';
+const PHONE = process.env.GOOGLE_PLACES_PHONE;
 let PLACE_ID = process.env.GOOGLE_PLACE_ID;
 
 const OUT_PATH = path.join(__dirname, '..', 'reviews.json');
 
-async function findPlaceId() {
-  const url = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(QUERY)}&inputtype=textquery&fields=place_id,name&key=${KEY}`;
+async function findPlaceIdBy(input, inputtype) {
+  const url = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(input)}&inputtype=${inputtype}&fields=place_id,name&key=${KEY}`;
   const res = await fetch(url).then(r => r.json());
-  if (res.status !== 'OK' || !res.candidates?.length) {
-    throw new Error(`Find Place failed: ${res.status} ${res.error_message || ''}`);
+  if (res.status === 'OK' && res.candidates?.length) {
+    console.log(`Found Place ID via ${inputtype} "${input}": ${res.candidates[0].place_id} (${res.candidates[0].name})`);
+    return res.candidates[0].place_id;
   }
-  console.log(`Found Place ID for "${res.candidates[0].name}": ${res.candidates[0].place_id}`);
-  return res.candidates[0].place_id;
+  console.warn(`Find Place by ${inputtype} returned ${res.status}: ${res.error_message || ''}`);
+  return null;
+}
+
+async function findPlaceId() {
+  if (PHONE) {
+    const id = await findPlaceIdBy(PHONE, 'phonenumber');
+    if (id) return id;
+  }
+  const id = await findPlaceIdBy(QUERY, 'textquery');
+  if (id) return id;
+  throw new Error('Could not resolve Place ID. Set GOOGLE_PLACE_ID env var directly.');
 }
 
 async function fetchDetails(placeId) {
