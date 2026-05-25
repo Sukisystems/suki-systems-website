@@ -965,26 +965,87 @@
     </div>
   </section>
 
-  <!-- ══ REVIEWS (Google Places, build-time) ════════════════
-       Temporarily hidden while GBP verification is pending — campaign is live and
-       the empty-state looks off. Restore by removing this comment wrapper once
-       reviews.json is populating. See trustindex-cors-regression memory.
+  <!-- ══ REVIEWS ═══════════════════════════════════════════ -->
   <section class="reviews" id="reviews">
     <div class="page">
       <div class="section-label reveal"><span class="num">01</span> What clients say</div>
     </div>
     <div class="reviews-header reveal rd1">
       <h2 class="reviews-title">Real words from real clients.</h2>
-      <div class="reviews-summary" id="reviews-summary" hidden>
-        <span class="stars" id="reviews-stars"></span>
-        <span id="reviews-rating-text"></span>
-        <a id="reviews-link" target="_blank" rel="noopener">See all on Google →</a>
+      <div class="reviews-summary">
+        <span class="stars">★★★★★</span>
+        <span>5.0 from 6 reviews</span>
       </div>
     </div>
-    <div class="reviews-grid reveal rd2" id="reviews-grid" aria-live="polite"></div>
-    <p class="reviews-empty" id="reviews-empty" hidden>Reviews are temporarily unavailable.</p>
+    <div class="reviews-grid reveal rd2">
+      <article class="review-card">
+        <div class="review-head">
+          <div class="review-avatar" style="background:var(--signal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">K</div>
+          <div>
+            <div class="review-author">Karina Illovska</div>
+            <div class="review-when">May 2026</div>
+          </div>
+        </div>
+        <div class="review-stars">★★★★★</div>
+        <p class="review-text">I had a great experience working with Suki System to build my photography portfolio website and I honestly couldn't be happier with the result. The whole process was super smooth and fast. I was impressed by how quickly everything came together. I knew what I wanted but struggled to put it into words — Suki System just got it. The website looks great and is really easy to navigate, which was important to me. Highly recommend Suki System if you need someone who listens, delivers fast, and actually brings your vision to life!</p>
+      </article>
+      <article class="review-card">
+        <div class="review-head">
+          <div class="review-avatar" style="background:var(--signal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">E</div>
+          <div>
+            <div class="review-author">Emma Edis</div>
+            <div class="review-when">May 2026</div>
+          </div>
+        </div>
+        <div class="review-stars">★★★★★</div>
+        <p class="review-text">Great team, Yali and Gil are lovely and the product is honestly incredible.</p>
+      </article>
+      <article class="review-card">
+        <div class="review-head">
+          <div class="review-avatar" style="background:var(--signal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">I</div>
+          <div>
+            <div class="review-author">Ido M</div>
+            <div class="review-when">May 2026</div>
+          </div>
+        </div>
+        <div class="review-stars">★★★★★</div>
+        <p class="review-text">Suki Systems helped me turn messy manual processes into efficient automated flows. Their AI solutions saved my business countless hours on a daily basis. They also redesigned and optimized old processes of mine end-to-end. Great experience from strategy to execution.</p>
+      </article>
+      <article class="review-card">
+        <div class="review-head">
+          <div class="review-avatar" style="background:var(--signal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">J</div>
+          <div>
+            <div class="review-author">Juda Mazor</div>
+            <div class="review-when">May 2026</div>
+          </div>
+        </div>
+        <div class="review-stars">★★★★★</div>
+        <p class="review-text">Thanks to Suki Systems — they were a huge help for Doggy City Shelter. They helped us automate time-consuming admin tasks and improve the way we manage our daily operations. The solutions were simple, efficient, and customized to fit the needs of our shelter team. Their support saved us valuable time so we could focus more on caring for the dogs. Professional, responsive, and genuinely great to work with.</p>
+      </article>
+      <article class="review-card">
+        <div class="review-head">
+          <div class="review-avatar" style="background:var(--signal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">N</div>
+          <div>
+            <div class="review-author">Nevo Amrani</div>
+            <div class="review-when">May 2026</div>
+          </div>
+        </div>
+        <div class="review-stars">★★★★★</div>
+        <p class="review-text">As a content creator, working with Suki Systems made a huge difference in my workflow. They helped automate repetitive tasks, organize backend processes, and save me a massive amount of time. Everything felt super tailored to the way I actually work and create content daily. The team is creative, responsive, and really understands operational efficiency with AI. Would absolutely work with them again.</p>
+      </article>
+      <article class="review-card">
+        <div class="review-head">
+          <div class="review-avatar" style="background:var(--signal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">L</div>
+          <div>
+            <div class="review-author">Lia Barkai</div>
+            <div class="review-when">May 2026</div>
+          </div>
+        </div>
+        <div class="review-stars">★★★★★</div>
+        <p class="review-text">Before Clockin, I used to spend every Sunday night juggling WhatsApp messages and spreadsheets trying to sort out the week's schedule for all my trainees. Now the AI builds my entire roster in about 5 seconds — I'm not exaggerating. I got back around 5 hours every week that I actually spend coaching now. The messaging platform is a game changer too — no more chasing clients across three different apps. The Suki Systems team really took the time to understand how a PT actually works day-to-day, and it shows in every detail of the product. Couldn't recommend them enough.</p>
+      </article>
+    </div>
   </section>
-  ═══════════════════════════════════════════════════════ -->
 
   <!-- ══ CASE STUDIES ══════════════════════════════════════ -->
   <section class="cases" id="results">
@@ -1562,61 +1623,5 @@
     });
   </script>
 
-  <script>
-    // ── Google Reviews (data fetched at build time → reviews.json) ──
-    (function () {
-      var grid = document.getElementById('reviews-grid');
-      var empty = document.getElementById('reviews-empty');
-      var summary = document.getElementById('reviews-summary');
-      if (!grid) return;
-
-      function star(filled) { return filled ? '★' : '☆'; }
-      function stars(n) {
-        n = Math.round(n || 0);
-        var s = ''; for (var i = 1; i <= 5; i++) s += star(i <= n);
-        return s;
-      }
-      function esc(str) {
-        return String(str || '').replace(/[&<>"']/g, function (c) {
-          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-        });
-      }
-
-      fetch('reviews.json?v=' + Date.now())
-        .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
-        .then(function (data) {
-          var reviews = (data && data.reviews) || [];
-          if (!reviews.length) { empty.hidden = false; return; }
-
-          if (data.rating && data.total) {
-            document.getElementById('reviews-stars').textContent = stars(data.rating);
-            document.getElementById('reviews-rating-text').textContent =
-              data.rating.toFixed(1) + ' on Google · ' + data.total + ' review' + (data.total === 1 ? '' : 's');
-            if (data.url) document.getElementById('reviews-link').href = data.url;
-            summary.hidden = false;
-          }
-
-          grid.innerHTML = reviews.map(function (r) {
-            var avatar = r.profile_photo_url
-              ? '<img class="review-avatar" src="' + esc(r.profile_photo_url) + '" alt="" loading="lazy" referrerpolicy="no-referrer">'
-              : '<div class="review-avatar"></div>';
-            return ''
-              + '<article class="review-card">'
-              +   '<div class="review-head">'
-              +     avatar
-              +     '<div>'
-              +       '<div class="review-author">' + esc(r.author_name) + '</div>'
-              +       '<div class="review-when">' + esc(r.relative_time_description || '') + '</div>'
-              +     '</div>'
-              +   '</div>'
-              +   '<div class="review-stars" aria-label="' + r.rating + ' out of 5">' + stars(r.rating) + '</div>'
-              +   '<p class="review-text">' + esc(r.text) + '</p>'
-              +   '<div class="review-google">via Google</div>'
-              + '</article>';
-          }).join('');
-        })
-        .catch(function () { empty.hidden = false; });
-    })();
-  </script>
 </body>
 </html>
