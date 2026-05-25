@@ -677,9 +677,10 @@
       max-width: 1100px;
       margin: 32px auto 0;
       padding: 0 40px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      display: flex;
       gap: 20px;
+      overflow: hidden;
+      position: relative;
     }
     .review-card {
       background: var(--paper);
@@ -689,6 +690,9 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
+      min-width: calc(33.333% - 14px);
+      flex-shrink: 0;
+      transition: transform 0.5s ease;
     }
     .review-head { display: flex; align-items: center; gap: 12px; }
     .review-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--paper-soft); object-fit: cover; }
@@ -697,10 +701,15 @@
     .review-stars { color: var(--signal); letter-spacing: 2px; font-size: 14px; }
     .review-text { font-size: 14px; line-height: 1.55; color: var(--ink); margin: 0; }
     .review-google { margin-top: auto; font-size: 11px; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; }
-    .reviews-empty { max-width: 1100px; margin: 32px auto 0; padding: 0 40px; color: var(--ink-soft); font-size: 14px; }
+    .reviews-nav { max-width: 1100px; margin: 20px auto 0; padding: 0 40px; display: flex; gap: 8px; justify-content: center; }
+    .reviews-nav button { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--paper); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+    .reviews-nav button:hover { background: var(--paper-soft); }
     @media (max-width: 768px) {
-      .reviews-wrap { padding: 0 20px; }
-      .reviews-header, .reviews-grid { padding: 0 20px; }
+      .reviews-header, .reviews-grid, .reviews-nav { padding: 0 20px; }
+      .review-card { min-width: calc(100% - 0px); }
+    }
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .review-card { min-width: calc(50% - 10px); }
     }
 
     /* ── Contact ───────────────────────────────────────── */
@@ -980,18 +989,19 @@
     <div class="reviews-grid reveal rd2">
       <article class="review-card">
         <div class="review-head">
-          <div class="review-avatar" style="background:var(--signal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">K</div>
+          <div class="review-avatar" style="background:#4285F4;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">K</div>
           <div>
             <div class="review-author">Karina Illovska</div>
             <div class="review-when">May 2026</div>
           </div>
         </div>
         <div class="review-stars">★★★★★</div>
-        <p class="review-text">I had a great experience working with Suki System to build my photography portfolio website and I honestly couldn't be happier with the result. The whole process was super smooth and fast. I was impressed by how quickly everything came together. I knew what I wanted but struggled to put it into words — Suki System just got it. The website looks great and is really easy to navigate, which was important to me. Highly recommend Suki System if you need someone who listens, delivers fast, and actually brings your vision to life!</p>
+        <p class="review-text">I had a great experience working with Suki System to build my photography portfolio website. The whole process was super smooth and fast — I knew what I wanted but struggled to put it into words, and they just got it. Highly recommend!</p>
+        <div class="review-google"><svg width="14" height="14" viewBox="0 0 48 48"><path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.08 24.08 0 0 0 0 21.56l7.98-6.19z"/><path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Google Review</div>
       </article>
       <article class="review-card">
         <div class="review-head">
-          <div class="review-avatar" style="background:var(--signal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">E</div>
+          <div class="review-avatar" style="background:#EA4335;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">E</div>
           <div>
             <div class="review-author">Emma Edis</div>
             <div class="review-when">May 2026</div>
@@ -999,51 +1009,60 @@
         </div>
         <div class="review-stars">★★★★★</div>
         <p class="review-text">Great team, Yali and Gil are lovely and the product is honestly incredible.</p>
+        <div class="review-google"><svg width="14" height="14" viewBox="0 0 48 48"><path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.08 24.08 0 0 0 0 21.56l7.98-6.19z"/><path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Google Review</div>
       </article>
       <article class="review-card">
         <div class="review-head">
-          <div class="review-avatar" style="background:var(--signal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">I</div>
+          <div class="review-avatar" style="background:#FBBC05;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">I</div>
           <div>
             <div class="review-author">Ido M</div>
             <div class="review-when">May 2026</div>
           </div>
         </div>
         <div class="review-stars">★★★★★</div>
-        <p class="review-text">Suki Systems helped me turn messy manual processes into efficient automated flows. Their AI solutions saved my business countless hours on a daily basis. They also redesigned and optimized old processes of mine end-to-end. Great experience from strategy to execution.</p>
+        <p class="review-text">Suki Systems helped me turn messy manual processes into efficient automated flows. Their AI solutions saved my business countless hours. Great experience from strategy to execution.</p>
+        <div class="review-google"><svg width="14" height="14" viewBox="0 0 48 48"><path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.08 24.08 0 0 0 0 21.56l7.98-6.19z"/><path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Google Review</div>
       </article>
       <article class="review-card">
         <div class="review-head">
-          <div class="review-avatar" style="background:var(--signal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">J</div>
+          <div class="review-avatar" style="background:#34A853;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">J</div>
           <div>
             <div class="review-author">Juda Mazor</div>
             <div class="review-when">May 2026</div>
           </div>
         </div>
         <div class="review-stars">★★★★★</div>
-        <p class="review-text">Thanks to Suki Systems — they were a huge help for Doggy City Shelter. They helped us automate time-consuming admin tasks and improve the way we manage our daily operations. The solutions were simple, efficient, and customized to fit the needs of our shelter team. Their support saved us valuable time so we could focus more on caring for the dogs. Professional, responsive, and genuinely great to work with.</p>
+        <p class="review-text">Suki Systems were a huge help for Doggy City Shelter. They automated time-consuming admin tasks and saved us valuable time so we could focus more on caring for the dogs. Professional, responsive, and great to work with.</p>
+        <div class="review-google"><svg width="14" height="14" viewBox="0 0 48 48"><path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.08 24.08 0 0 0 0 21.56l7.98-6.19z"/><path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Google Review</div>
       </article>
       <article class="review-card">
         <div class="review-head">
-          <div class="review-avatar" style="background:var(--signal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">N</div>
+          <div class="review-avatar" style="background:#4285F4;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">N</div>
           <div>
             <div class="review-author">Nevo Amrani</div>
             <div class="review-when">May 2026</div>
           </div>
         </div>
         <div class="review-stars">★★★★★</div>
-        <p class="review-text">As a content creator, working with Suki Systems made a huge difference in my workflow. They helped automate repetitive tasks, organize backend processes, and save me a massive amount of time. Everything felt super tailored to the way I actually work and create content daily. The team is creative, responsive, and really understands operational efficiency with AI. Would absolutely work with them again.</p>
+        <p class="review-text">As a content creator, working with Suki Systems made a huge difference in my workflow. They helped automate repetitive tasks and save me a massive amount of time. Would absolutely work with them again.</p>
+        <div class="review-google"><svg width="14" height="14" viewBox="0 0 48 48"><path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.08 24.08 0 0 0 0 21.56l7.98-6.19z"/><path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Google Review</div>
       </article>
       <article class="review-card">
         <div class="review-head">
-          <div class="review-avatar" style="background:var(--signal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">L</div>
+          <div class="review-avatar" style="background:#EA4335;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;">L</div>
           <div>
             <div class="review-author">Lia Barkai</div>
             <div class="review-when">May 2026</div>
           </div>
         </div>
         <div class="review-stars">★★★★★</div>
-        <p class="review-text">Before Clockin, I used to spend every Sunday night juggling WhatsApp messages and spreadsheets trying to sort out the week's schedule for all my trainees. Now the AI builds my entire roster in about 5 seconds — I'm not exaggerating. I got back around 5 hours every week that I actually spend coaching now. The messaging platform is a game changer too — no more chasing clients across three different apps. The Suki Systems team really took the time to understand how a PT actually works day-to-day, and it shows in every detail of the product. Couldn't recommend them enough.</p>
+        <p class="review-text">Before Clockin, I spent every Sunday night juggling WhatsApp messages and spreadsheets. Now the AI builds my entire roster in seconds. I got back 5 hours every week. The Suki Systems team really understood how a PT works day-to-day.</p>
+        <div class="review-google"><svg width="14" height="14" viewBox="0 0 48 48"><path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.08 24.08 0 0 0 0 21.56l7.98-6.19z"/><path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Google Review</div>
       </article>
+    </div>
+    <div class="reviews-nav">
+      <button id="rev-prev" aria-label="Previous reviews">←</button>
+      <button id="rev-next" aria-label="Next reviews">→</button>
     </div>
   </section>
 
@@ -1621,6 +1640,35 @@
         }
       });
     });
+  </script>
+
+  <script>
+    (function () {
+      var grid = document.querySelector('.reviews-grid');
+      var cards = grid.querySelectorAll('.review-card');
+      var prev = document.getElementById('rev-prev');
+      var next = document.getElementById('rev-next');
+      var idx = 0;
+      var visible = window.innerWidth < 769 ? 1 : window.innerWidth < 1025 ? 2 : 3;
+      var max = Math.max(0, cards.length - visible);
+
+      function slide() {
+        var cardW = cards[0].offsetWidth + 20;
+        cards.forEach(function (c) { c.style.transform = 'translateX(' + (-idx * cardW) + 'px)'; });
+      }
+
+      prev.addEventListener('click', function () { idx = Math.max(0, idx - 1); slide(); });
+      next.addEventListener('click', function () { idx = Math.min(max, idx + 1); slide(); });
+
+      window.addEventListener('resize', function () {
+        visible = window.innerWidth < 769 ? 1 : window.innerWidth < 1025 ? 2 : 3;
+        max = Math.max(0, cards.length - visible);
+        idx = Math.min(idx, max);
+        slide();
+      });
+
+      setInterval(function () { idx = idx >= max ? 0 : idx + 1; slide(); }, 4000);
+    })();
   </script>
 
 </body>
